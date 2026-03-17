@@ -14,12 +14,16 @@ import { COLORS } from "../../src/constants/colors";
 import { QUIZZES } from "../../src/data/mockData";
 import { useProgressStore } from "../../src/store/progressStore";
 import { useAuthStore } from "../../src/store/authStore";
+import { useLanguageStore } from "../../src/store/languageStore";
+import { getQuizzesForLang } from "../../src/data/quizTranslations";
 
 type AnswerState = "idle" | "correct" | "wrong";
 
 export default function QuizScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const quiz = QUIZZES[id ?? ""];
+  const { tr, lang } = useLanguageStore();
+  const translatedQuizzes = getQuizzesForLang(lang, QUIZZES);
+  const quiz = translatedQuizzes[id ?? ""];
   const { completeLesson } = useProgressStore();
   const { updateUser, user } = useAuthStore();
 
@@ -118,19 +122,19 @@ export default function QuizScreen() {
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.scoreContainer}>
           <Text style={styles.scoreEmoji}>💔</Text>
-          <Text style={styles.scoreTitle}>¡Sin vidas!</Text>
+          <Text style={styles.scoreTitle}>{tr("quiz.noLives")}</Text>
 
           <View style={styles.scoreCard}>
             <Text style={styles.scorePercent}>0</Text>
-            <Text style={styles.scoreSubtitle}>Te quedaste sin vidas</Text>
+            <Text style={styles.scoreSubtitle}>{tr("quiz.noLivesMsg")}</Text>
           </View>
 
           <View style={styles.chimaBubble}>
             <Text style={{ fontSize: 40 }}>🎺</Text>
             <View style={styles.bubbleBox}>
-              <Text style={styles.bubbleName}>Chima dice:</Text>
+              <Text style={styles.bubbleName}>{tr("home.chimaSays")}</Text>
               <Text style={styles.bubbleMsg}>
-                No te rindas, repasa la lección y vuelve a intentarlo. ¡Tú puedes!
+                {tr("quiz.chimaDontGiveUp")}
               </Text>
             </View>
           </View>
@@ -150,14 +154,14 @@ export default function QuizScreen() {
               }}
               activeOpacity={0.8}
             >
-              <Text style={styles.nextLessonBtnText}>Reintentar 🔄</Text>
+              <Text style={styles.nextLessonBtnText}>{tr("quiz.retry")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.homeBtn}
               onPress={() => router.replace("/(tabs)")}
               activeOpacity={0.8}
             >
-              <Text style={styles.homeBtnText}>Ir al Inicio 🏠</Text>
+              <Text style={styles.homeBtnText}>{tr("quiz.goHome")}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -177,20 +181,20 @@ export default function QuizScreen() {
         <ScrollView contentContainerStyle={styles.scoreContainer}>
           <Text style={styles.scoreEmoji}>{isPerfect ? "🏆" : isGood ? "⭐" : "📚"}</Text>
           <Text style={styles.scoreTitle}>
-            {isPerfect ? "¡Perfecto!" : isGood ? "¡Bien hecho!" : "¡Sigue intentando!"}
+            {isPerfect ? tr("quiz.perfect") : isGood ? tr("quiz.wellDone") : tr("quiz.keepTrying")}
           </Text>
 
           <View style={styles.scoreCard}>
             <Text style={styles.scorePercent}>{score}%</Text>
-            <Text style={styles.scoreSubtitle}>{correctCount}/{total} respuestas correctas</Text>
+            <Text style={styles.scoreSubtitle}>{correctCount}/{total} {tr("quiz.correctAnswers")}</Text>
           </View>
 
           {/* NFT Badge if perfect */}
           {isPerfect && (
             <View style={styles.nftBadge}>
               <Text style={{ fontSize: 48 }}>🏅</Text>
-              <Text style={styles.nftTitle}>¡Ganaste un Badge NFT!</Text>
-              <Text style={styles.nftSub}>Se acuñará en tu wallet Stellar</Text>
+              <Text style={styles.nftTitle}>{tr("quiz.nftBadge")}</Text>
+              <Text style={styles.nftSub}>{tr("quiz.nftMint")}</Text>
             </View>
           )}
 
@@ -198,13 +202,13 @@ export default function QuizScreen() {
           <View style={styles.rewardCard}>
             <View style={styles.rewardItem}>
               <Text style={styles.rewardEmoji}>⚡</Text>
-              <Text style={styles.rewardLabel}>XP Ganados</Text>
+              <Text style={styles.rewardLabel}>{tr("quiz.xpEarned")}</Text>
               <Text style={[styles.rewardValue, { color: COLORS.primary }]}>+100</Text>
             </View>
             <View style={styles.rewardDivider} />
             <View style={styles.rewardItem}>
               <Text style={styles.rewardEmoji}>💫</Text>
-              <Text style={styles.rewardLabel}>XLM Ganados</Text>
+              <Text style={styles.rewardLabel}>{tr("quiz.xlmEarned")}</Text>
               <Text style={[styles.rewardValue, { color: COLORS.accent }]}>+0.5</Text>
             </View>
           </View>
@@ -213,13 +217,13 @@ export default function QuizScreen() {
           <View style={styles.chimaBubble}>
             <Text style={{ fontSize: 40 }}>🎺</Text>
             <View style={styles.bubbleBox}>
-              <Text style={styles.bubbleName}>Chima dice:</Text>
+              <Text style={styles.bubbleName}>{tr("home.chimaSays")}</Text>
               <Text style={styles.bubbleMsg}>
                 {isPerfect
-                  ? "¡Increíble! Sacaste 100%. Eres un verdadero experto en blockchain. ¡Sigue así!"
+                  ? tr("quiz.chimaPerfect")
                   : isGood
-                  ? "¡Muy bien! Tienes una buena comprensión del tema. Sigue practicando para mejorar."
-                  : "No te preocupes, el aprendizaje es un proceso. Repasa la lección y vuelve a intentarlo."}
+                  ? tr("quiz.chimaGood")
+                  : tr("quiz.chimaBad")}
               </Text>
             </View>
           </View>
@@ -230,14 +234,14 @@ export default function QuizScreen() {
               onPress={() => router.replace("/(tabs)")}
               activeOpacity={0.8}
             >
-              <Text style={styles.homeBtnText}>Ir al Inicio 🏠</Text>
+              <Text style={styles.homeBtnText}>{tr("quiz.goHome")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.nextLessonBtn}
               onPress={() => router.replace("/(tabs)/learn")}
               activeOpacity={0.8}
             >
-              <Text style={styles.nextLessonBtnText}>Siguiente Lección →</Text>
+              <Text style={styles.nextLessonBtnText}>{tr("quiz.nextLesson")}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -249,9 +253,9 @@ export default function QuizScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Quiz no disponible</Text>
+          <Text style={styles.notFoundText}>{tr("quiz.notAvailable")}</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={{ color: COLORS.primary, marginTop: 12 }}>Volver</Text>
+            <Text style={{ color: COLORS.primary, marginTop: 12 }}>{tr("quiz.back")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -298,7 +302,7 @@ export default function QuizScreen() {
       <ScrollView contentContainerStyle={styles.quizContent}>
         {/* Question */}
         <View style={styles.questionCard}>
-          <Text style={styles.questionLabel}>Pregunta {currentQ + 1}</Text>
+          <Text style={styles.questionLabel}>{tr("quiz.question")} {currentQ + 1}</Text>
           <Text style={styles.questionText}>{question.question}</Text>
         </View>
 
@@ -306,7 +310,7 @@ export default function QuizScreen() {
         {answerState === "idle" && (
           <View style={styles.hintRow}>
             <Text style={{ fontSize: 28 }}>🎺</Text>
-            <Text style={styles.hintText}>Elige la respuesta correcta</Text>
+            <Text style={styles.hintText}>{tr("quiz.chooseAnswer")}</Text>
           </View>
         )}
 
@@ -338,7 +342,7 @@ export default function QuizScreen() {
         {showExplanation && (
           <View style={[styles.explanationCard, answerState === "correct" ? styles.explanationCorrect : styles.explanationWrong]}>
             <Text style={styles.explanationTitle}>
-              {answerState === "correct" ? "✅ ¡Correcto!" : "❌ Incorrecto"}
+              {answerState === "correct" ? tr("quiz.correct") : tr("quiz.incorrect")}
             </Text>
             <Text style={styles.explanationText}>{question.explanation}</Text>
           </View>
@@ -352,7 +356,7 @@ export default function QuizScreen() {
         <View style={styles.footer}>
           <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.85}>
             <Text style={styles.nextBtnText}>
-              {currentQ + 1 < quiz.questions.length ? "Siguiente →" : "Ver Resultados 🎯"}
+              {currentQ + 1 < quiz.questions.length ? tr("quiz.next") : tr("quiz.seeResults")}
             </Text>
           </TouchableOpacity>
         </View>

@@ -10,10 +10,12 @@ import { COLORS } from "../../src/constants/colors";
 import { LEADERBOARD } from "../../src/data/mockData";
 import { useAuthStore } from "../../src/store/authStore";
 import { useProgressStore } from "../../src/store/progressStore";
+import { useLanguageStore } from "../../src/store/languageStore";
 
 export default function LeaderboardScreen() {
   const { user } = useAuthStore();
   const { totalXP, currentStreak } = useProgressStore();
+  const { tr } = useLanguageStore();
 
   // Replace "Tú" entry with real user data
   const effectiveXP = totalXP + (user?.xp ?? 0);
@@ -38,17 +40,17 @@ export default function LeaderboardScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>🏆 Ranking Global</Text>
-          <Text style={styles.subtitle}>Semana del 10-16 Mar 2025</Text>
+          <Text style={styles.title}>{tr("leaderboard.title")}</Text>
+          <Text style={styles.subtitle}>{tr("leaderboard.week")}</Text>
         </View>
 
         {/* Alli challenger */}
         <View style={styles.alliCard}>
           <Text style={{ fontSize: 40 }}>🎸</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.alliName}>Alli desafía:</Text>
+            <Text style={styles.alliName}>{tr("leaderboard.alliChallenges")}</Text>
             <Text style={styles.alliMsg}>
-              ¡Supera a María esta semana para ganar 50 XLM extra! Tú puedes lograrlo 💪
+              {tr("leaderboard.alliMsg")}
             </Text>
           </View>
         </View>
@@ -108,7 +110,7 @@ export default function LeaderboardScreen() {
                   </Text>
                   {(entry as any).isCurrentUser && (
                     <View style={styles.youBadge}>
-                      <Text style={styles.youBadgeText}>Tú</Text>
+                      <Text style={styles.youBadgeText}>{tr("leaderboard.you")}</Text>
                     </View>
                   )}
                 </View>

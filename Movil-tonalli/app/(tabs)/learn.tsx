@@ -12,13 +12,17 @@ import { router } from "expo-router";
 import { COLORS } from "../../src/constants/colors";
 import { MODULES, LESSONS } from "../../src/data/mockData";
 import { useProgressStore } from "../../src/store/progressStore";
+import { useLanguageStore } from "../../src/store/languageStore";
+import { getLessonsForLang } from "../../src/data/lessonTranslations";
 
 export default function LearnScreen() {
   const [expandedModule, setExpandedModule] = useState<string | null>("m1");
   const { isLessonCompleted } = useProgressStore();
+  const { tr, lang } = useLanguageStore();
+  const translatedLessons = getLessonsForLang(lang, LESSONS);
 
   const getModuleProgress = (moduleId: string) => {
-    const lessons = LESSONS[moduleId] ?? [];
+    const lessons = translatedLessons[moduleId] ?? [];
     const completed = lessons.filter((l: any) => isLessonCompleted(l.id)).length;
     return { completed, total: lessons.length, percent: lessons.length ? completed / lessons.length : 0 };
   };
@@ -35,28 +39,28 @@ export default function LearnScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Aprender</Text>
-        <Text style={styles.subtitle}>Tu camino al dominio Web3</Text>
+        <Text style={styles.title}>{tr("learn.title")}</Text>
+        <Text style={styles.subtitle}>{tr("learn.subtitle")}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Overall progress */}
         <View style={styles.overallCard}>
-          <Text style={styles.overallTitle}>🗺️ Tu Ruta de Aprendizaje</Text>
+          <Text style={styles.overallTitle}>{tr("learn.route")}</Text>
           <View style={styles.overallStats}>
             <View style={styles.overallStat}>
               <Text style={styles.overallNum}>4</Text>
-              <Text style={styles.overallLabel}>Módulos</Text>
+              <Text style={styles.overallLabel}>{tr("learn.modules")}</Text>
             </View>
             <View style={styles.overallDivider} />
             <View style={styles.overallStat}>
               <Text style={styles.overallNum}>24</Text>
-              <Text style={styles.overallLabel}>Lecciones</Text>
+              <Text style={styles.overallLabel}>{tr("learn.lessons")}</Text>
             </View>
             <View style={styles.overallDivider} />
             <View style={styles.overallStat}>
               <Text style={[styles.overallNum, { color: COLORS.accent }]}>2400</Text>
-              <Text style={styles.overallLabel}>XP Total</Text>
+              <Text style={styles.overallLabel}>{tr("learn.totalXP")}</Text>
             </View>
           </View>
         </View>
@@ -66,7 +70,7 @@ export default function LearnScreen() {
           {MODULES.map((mod, modIndex) => {
             const progress = getModuleProgress(mod.id);
             const isExpanded = expandedModule === mod.id;
-            const lessons = LESSONS[mod.id] ?? [];
+            const lessons = translatedLessons[mod.id] ?? [];
             const unlocked = isModuleUnlocked(modIndex);
             const locked = !unlocked;
 
@@ -88,7 +92,7 @@ export default function LearnScreen() {
                       </Text>
                       {locked && (
                         <View style={styles.lockedBadge}>
-                          <Text style={styles.lockedBadgeText}>Bloqueado</Text>
+                          <Text style={styles.lockedBadgeText}>{tr("learn.locked")}</Text>
                         </View>
                       )}
                     </View>

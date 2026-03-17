@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -14,12 +15,16 @@ import { useProgressStore } from "../../src/store/progressStore";
 import { COLORS } from "../../src/constants/colors";
 import { CERTIFICATES } from "../../src/data/mockData";
 import XPBar from "../../src/components/XPBar";
+import { useLanguageStore } from "../../src/store/languageStore";
+import { LANG_LABELS, Lang } from "../../src/i18n/translations";
 
 const XP_PER_LEVEL = 1000;
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const { totalXP, currentStreak, lessonsProgress } = useProgressStore();
+  const { tr, lang, setLang } = useLanguageStore();
+  const [showLangModal, setShowLangModal] = useState(false);
   const effectiveXP = totalXP + (user?.xp ?? 0);
   const xpInLevel = effectiveXP % XP_PER_LEVEL;
   const level = Math.floor(effectiveXP / XP_PER_LEVEL) + 1;
@@ -28,9 +33,9 @@ export default function ProfileScreen() {
   const resetProgress = useProgressStore((s) => s.reset);
 
   const handleLogout = () => {
-    Alert.alert("Cerrar Sesión", "¿Estás seguro de que quieres salir?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Salir", style: "destructive", onPress: () => {
+    Alert.alert(tr("profile.logoutConfirm"), tr("profile.logoutMsg"), [
+      { text: tr("profile.cancel"), style: "cancel" },
+      { text: tr("profile.logout"), style: "destructive", onPress: () => {
         logout();
         resetProgress();
         router.replace("/(auth)/login");
@@ -39,12 +44,12 @@ export default function ProfileScreen() {
   };
 
   const SETTINGS = [
-    { emoji: "🔔", label: "Notificaciones", action: () => {} },
-    { emoji: "🌐", label: "Idioma", action: () => {} },
-    { emoji: "👛", label: "Mi Wallet Stellar", action: () => {} },
-    { emoji: "🔒", label: "Privacidad", action: () => {} },
-    { emoji: "❓", label: "Ayuda & Soporte", action: () => {} },
-    { emoji: "⭐", label: "Calificar la App", action: () => {} },
+    { emoji: "🔔", label: tr("profile.notifications"), action: () => {} },
+    { emoji: "🌐", label: `${tr("profile.language")} (${LANG_LABELS[lang]})`, action: () => setShowLangModal(true) },
+    { emoji: "👛", label: tr("profile.myWallet"), action: () => {} },
+    { emoji: "🔒", label: tr("profile.privacy"), action: () => {} },
+    { emoji: "❓", label: tr("profile.help"), action: () => {} },
+    { emoji: "⭐", label: tr("profile.rate"), action: () => {} },
   ];
 
   return (
@@ -52,9 +57,9 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Mi Perfil</Text>
+          <Text style={styles.title}>{tr("profile.title")}</Text>
           <TouchableOpacity style={styles.settingsBtn} onPress={handleLogout}>
-            <Text style={styles.settingsBtnText}>Salir</Text>
+            <Text style={styles.settingsBtnText}>{tr("profile.logout")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -69,7 +74,7 @@ export default function ProfileScreen() {
             <Text style={styles.userName}>{user?.name ?? "Explorador"}</Text>
             <Text style={styles.userEmail}>{user?.email ?? ""}</Text>
             <View style={styles.levelBadge}>
-              <Text style={styles.levelText}>⚡ Nivel {level} · Explorer</Text>
+              <Text style={styles.levelText}>⚡ {tr("profile.level")} {level} · {tr("profile.explorer")}</Text>
             </View>
           </View>
         </View>
@@ -82,10 +87,10 @@ export default function ProfileScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {[
-            { emoji: "⚡", label: "XP Total", value: effectiveXP.toLocaleString(), color: COLORS.primary },
-            { emoji: "🔥", label: "Racha", value: `${currentStreak || (user?.streak ?? 0)}`, color: "#FF4757" },
-            { emoji: "📚", label: "Lecciones", value: completedCount, color: COLORS.success },
-            { emoji: "💫", label: "XLM Ganados", value: `${(user?.xlmBalance ?? 0).toFixed(1)} XLM`, color: COLORS.accent },
+            { emoji: "⚡", label: tr("profile.xpTotal"), value: effectiveXP.toLocaleString(), color: COLORS.primary },
+            { emoji: "🔥", label: tr("profile.streak"), value: `${currentStreak || (user?.streak ?? 0)}`, color: "#FF4757" },
+            { emoji: "📚", label: tr("profile.lessons"), value: completedCount, color: COLORS.success },
+            { emoji: "💫", label: tr("profile.xlmEarned"), value: `${(user?.xlmBalance ?? 0).toFixed(1)} XLM`, color: COLORS.accent },
           ].map((stat, i) => (
             <View key={i} style={[styles.statCard, { borderColor: stat.color + "30" }]}>
               <Text style={styles.statEmoji}>{stat.emoji}</Text>
@@ -97,12 +102,12 @@ export default function ProfileScreen() {
 
         {/* Stellar Wallet */}
         <View style={styles.walletSection}>
-          <Text style={styles.sectionTitle}>⭐ Mi Wallet Stellar</Text>
+          <Text style={styles.sectionTitle}>{tr("profile.wallet")}</Text>
           <View style={styles.walletCard}>
             <View style={styles.walletRow}>
-              <Text style={styles.walletLabel}>Dirección</Text>
+              <Text style={styles.walletLabel}>{tr("profile.address")}</Text>
               <TouchableOpacity>
-                <Text style={styles.walletCopy}>Copiar</Text>
+                <Text style={styles.walletCopy}>{tr("profile.copy")}</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.walletAddress} numberOfLines={1}>
@@ -110,11 +115,11 @@ export default function ProfileScreen() {
             </Text>
             <View style={styles.walletBalance}>
               <View>
-                <Text style={styles.walletBalanceLabel}>Balance XLM</Text>
+                <Text style={styles.walletBalanceLabel}>{tr("profile.balance")}</Text>
                 <Text style={styles.walletBalanceValue}>{user?.xlmBalance ?? 15.5} XLM</Text>
               </View>
               <View style={styles.stellarBadge}>
-                <Text style={styles.stellarBadgeText}>Stellar Network</Text>
+                <Text style={styles.stellarBadgeText}>{tr("profile.stellarNetwork")}</Text>
               </View>
             </View>
           </View>
@@ -122,7 +127,7 @@ export default function ProfileScreen() {
 
         {/* NFT Certificates */}
         <View style={styles.certSection}>
-          <Text style={styles.sectionTitle}>🏆 Mis Certificados NFT</Text>
+          <Text style={styles.sectionTitle}>{tr("profile.certificates")}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {CERTIFICATES.map((cert) => (
               <TouchableOpacity
@@ -155,7 +160,7 @@ export default function ProfileScreen() {
 
         {/* Settings */}
         <View style={styles.settingsSection}>
-          <Text style={styles.sectionTitle}>⚙️ Configuración</Text>
+          <Text style={styles.sectionTitle}>{tr("profile.settings")}</Text>
           <View style={styles.settingsList}>
             {SETTINGS.map((item, i) => (
               <TouchableOpacity
@@ -174,12 +179,45 @@ export default function ProfileScreen() {
 
         {/* App info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>🌅 Tonalli v1.0.0 · Hackathon 2025</Text>
-          <Text style={styles.appInfoSub}>Powered by Stellar Blockchain ⭐</Text>
+          <Text style={styles.appInfoText}>{tr("profile.appVersion")}</Text>
+          <Text style={styles.appInfoSub}>{tr("profile.poweredBy")}</Text>
         </View>
 
-        <View style={{ height: 24 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Language Modal */}
+      <Modal visible={showLangModal} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowLangModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{tr("language.title")}</Text>
+            {(["es", "en", "nah"] as Lang[]).map((l) => (
+              <TouchableOpacity
+                key={l}
+                style={[styles.langOption, lang === l && styles.langOptionActive]}
+                onPress={() => { setLang(l); setShowLangModal(false); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.langFlag}>
+                  {l === "es" ? "🇲🇽" : l === "en" ? "🇺🇸" : "🌽"}
+                </Text>
+                <Text style={[styles.langText, lang === l && styles.langTextActive]}>
+                  {LANG_LABELS[l]}
+                </Text>
+                {lang === l && (
+                  <View style={styles.langBadge}>
+                    <Text style={styles.langBadgeText}>{tr("language.current")}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -366,4 +404,48 @@ const styles = StyleSheet.create({
   appInfo: { alignItems: "center", gap: 4 },
   appInfoText: { color: COLORS.textMuted, fontSize: 12 },
   appInfoSub: { color: COLORS.textMuted, fontSize: 11 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  modalContent: {
+    backgroundColor: COLORS.card,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    gap: 12,
+  },
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  langOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    gap: 14,
+  },
+  langOptionActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + "10",
+  },
+  langFlag: { fontSize: 28 },
+  langText: { color: COLORS.text, fontSize: 16, fontWeight: "600", flex: 1 },
+  langTextActive: { color: COLORS.primary, fontWeight: "800" },
+  langBadge: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 99,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  langBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
 });

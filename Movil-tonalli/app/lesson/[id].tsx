@@ -12,6 +12,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../../src/constants/colors";
 import { LESSONS } from "../../src/data/mockData";
 import { useProgressStore } from "../../src/store/progressStore";
+import { useLanguageStore } from "../../src/store/languageStore";
+import { getLessonsForLang } from "../../src/data/lessonTranslations";
 
 function getLessonById(id: string) {
   for (const moduleId in LESSONS) {
@@ -23,7 +25,18 @@ function getLessonById(id: string) {
 
 export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const lesson = getLessonById(id ?? "");
+  const { tr, lang } = useLanguageStore();
+  const translatedLessons = getLessonsForLang(lang, LESSONS);
+
+  function getTranslatedLesson(lessonId: string) {
+    for (const moduleId in translatedLessons) {
+      const found = translatedLessons[moduleId].find((l: any) => l.id === lessonId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  const lesson = getTranslatedLesson(id ?? "");
   const scrollRef = useRef<ScrollView>(null);
   const { isLessonCompleted } = useProgressStore();
 
@@ -34,9 +47,9 @@ export default function LessonScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Lección no encontrada</Text>
+          <Text style={styles.notFoundText}>{tr("lesson.notFound")}</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={{ color: COLORS.primary }}>Volver</Text>
+            <Text style={{ color: COLORS.primary }}>{tr("quiz.back")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -113,9 +126,9 @@ export default function LessonScreen() {
         <View style={styles.chimaBubble}>
           <Text style={styles.chimaEmoji}>🎺</Text>
           <View style={styles.bubbleBox}>
-            <Text style={styles.bubbleName}>Chima dice:</Text>
+            <Text style={styles.bubbleName}>{tr("home.chimaSays")}</Text>
             <Text style={styles.bubbleMsg}>
-              ¡Hola! Hoy vamos a aprender sobre "{lesson.title}". Es un concepto fundamental en el mundo blockchain. ¡Vamos! 🚀
+              {tr("lesson.chimaIntro", { title: lesson.title })}
             </Text>
           </View>
         </View>
@@ -127,9 +140,9 @@ export default function LessonScreen() {
 
         {/* Key takeaways */}
         <View style={styles.takeawaysCard}>
-          <Text style={styles.takeawaysTitle}>🎯 Puntos Clave</Text>
+          <Text style={styles.takeawaysTitle}>🎯 {tr("lesson.keyPoints")}</Text>
           <Text style={styles.takeawaysText}>
-            Ahora que entiendes {lesson.title.toLowerCase()}, estás listo para el quiz. ¡Demuestra lo que aprendiste!
+            {tr("lesson.readyForQuiz", { title: lesson.title.toLowerCase() })}
           </Text>
         </View>
 
@@ -137,9 +150,9 @@ export default function LessonScreen() {
         <View style={styles.alliCard}>
           <Text style={{ fontSize: 32 }}>🎸</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.alliTitle}>Alli te reta:</Text>
+            <Text style={styles.alliTitle}>{tr("lesson.alliChallenges")}</Text>
             <Text style={styles.alliMsg}>
-              ¿Puedes obtener 100% en el quiz? ¡Yo lo hice en 2 intentos! 😏
+              {tr("lesson.alliMsg")}
             </Text>
           </View>
         </View>
@@ -150,7 +163,7 @@ export default function LessonScreen() {
       {/* Bottom CTA */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.continueBtn} onPress={handleContinue} activeOpacity={0.85}>
-          <Text style={styles.continueBtnText}>¡Tomar el Quiz! 🎯</Text>
+          <Text style={styles.continueBtnText}>{tr("lesson.takeQuiz")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

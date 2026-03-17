@@ -12,18 +12,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../../src/constants/colors";
 import { CERTIFICATES } from "../../src/data/mockData";
+import { useLanguageStore } from "../../src/store/languageStore";
 
 export default function CertificateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const cert = CERTIFICATES.find((c) => c.id === id);
+  const { tr } = useLanguageStore();
 
   if (!cert) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.notFound}>
-          <Text style={styles.notFoundText}>Certificado no encontrado</Text>
+          <Text style={styles.notFoundText}>{tr("cert.notFound")}</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={{ color: COLORS.primary, marginTop: 12 }}>Volver</Text>
+            <Text style={{ color: COLORS.primary, marginTop: 12 }}>{tr("cert.back")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -33,16 +35,16 @@ export default function CertificateScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `🏆 Obtuve el certificado NFT "${cert.title}" en Tonalli, la plataforma Web3 educativa en Stellar blockchain! Hash: ${cert.nftHash} #Tonalli #Stellar #Web3`,
+        message: tr("cert.shareText", { title: cert.title, hash: cert.nftHash }),
       });
     } catch {}
   };
 
   const handleViewOnChain = () => {
     Alert.alert(
-      "Ver en Blockchain",
-      `Este NFT está registrado en Stellar Network.\n\nHash: ${cert.nftHash}\n\nEn producción, esto abrirá Stellar Explorer.`,
-      [{ text: "Entendido" }]
+      tr("cert.viewOnChain"),
+      tr("cert.chainMsg", { hash: cert.nftHash }),
+      [{ text: tr("cert.understood") }]
     );
   };
 
@@ -62,9 +64,9 @@ export default function CertificateScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
           <Text style={styles.closeBtnText}>✕</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Certificado NFT</Text>
+        <Text style={styles.headerTitle}>{tr("cert.title")}</Text>
         <TouchableOpacity onPress={handleShare}>
-          <Text style={styles.shareBtn}>Compartir</Text>
+          <Text style={styles.shareBtn}>{tr("cert.share")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -96,15 +98,15 @@ export default function CertificateScreen() {
 
           <View style={styles.certMeta}>
             <View style={styles.certMetaItem}>
-              <Text style={styles.certMetaLabel}>⚡ XP Otorgados</Text>
+              <Text style={styles.certMetaLabel}>{tr("cert.xpAwarded")}</Text>
               <Text style={[styles.certMetaValue, { color: COLORS.primary }]}>+{cert.xpAwarded}</Text>
             </View>
             <View style={styles.certMetaItem}>
-              <Text style={styles.certMetaLabel}>💫 XLM Otorgados</Text>
+              <Text style={styles.certMetaLabel}>{tr("cert.xlmAwarded")}</Text>
               <Text style={[styles.certMetaValue, { color: COLORS.accent }]}>+{cert.xlmAwarded} XLM</Text>
             </View>
             <View style={styles.certMetaItem}>
-              <Text style={styles.certMetaLabel}>📅 Fecha</Text>
+              <Text style={styles.certMetaLabel}>{tr("cert.date")}</Text>
               <Text style={styles.certMetaValue}>{cert.dateEarned}</Text>
             </View>
           </View>
@@ -112,44 +114,44 @@ export default function CertificateScreen() {
 
         {/* Blockchain Details */}
         <View style={styles.blockchainSection}>
-          <Text style={styles.sectionTitle}>⭐ Datos en Blockchain</Text>
+          <Text style={styles.sectionTitle}>{tr("cert.blockchainData")}</Text>
           <View style={styles.blockchainCard}>
             <View style={styles.blockRow}>
-              <Text style={styles.blockLabel}>Red</Text>
+              <Text style={styles.blockLabel}>{tr("cert.network")}</Text>
               <Text style={styles.blockValue}>Stellar Mainnet</Text>
             </View>
             <View style={styles.blockDivider} />
             <View style={styles.blockRow}>
-              <Text style={styles.blockLabel}>Hash NFT</Text>
+              <Text style={styles.blockLabel}>{tr("cert.nftHash")}</Text>
               <Text style={styles.blockValueMono}>{cert.nftHash}</Text>
             </View>
             <View style={styles.blockDivider} />
             <View style={styles.blockRow}>
-              <Text style={styles.blockLabel}>Estándar</Text>
+              <Text style={styles.blockLabel}>{tr("cert.standard")}</Text>
               <Text style={styles.blockValue}>Stellar NFT (SEP-39)</Text>
             </View>
             <View style={styles.blockDivider} />
             <View style={styles.blockRow}>
-              <Text style={styles.blockLabel}>Estado</Text>
+              <Text style={styles.blockLabel}>{tr("cert.status")}</Text>
               <View style={styles.confirmedBadge}>
-                <Text style={styles.confirmedText}>✓ Confirmado</Text>
+                <Text style={styles.confirmedText}>{tr("cert.confirmed")}</Text>
               </View>
             </View>
           </View>
 
           <TouchableOpacity style={styles.viewChainBtn} onPress={handleViewOnChain} activeOpacity={0.8}>
-            <Text style={styles.viewChainBtnText}>Ver en Stellar Explorer 🔍</Text>
+            <Text style={styles.viewChainBtnText}>{tr("cert.viewExplorer")}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Share Section */}
         <View style={styles.shareSection}>
-          <Text style={styles.sectionTitle}>📢 Comparte tu logro</Text>
+          <Text style={styles.sectionTitle}>{tr("cert.shareTitle")}</Text>
           <TouchableOpacity style={styles.shareCard} onPress={handleShare} activeOpacity={0.85}>
             <View>
-              <Text style={styles.shareCardTitle}>¡Presume tu certificado!</Text>
+              <Text style={styles.shareCardTitle}>{tr("cert.showOff")}</Text>
               <Text style={styles.shareCardSub}>
-                Comparte en redes sociales y muestra que eres un experto en {cert.title}
+                {tr("cert.shareMsg", { title: cert.title })}
               </Text>
             </View>
             <Text style={{ fontSize: 32 }}>📤</Text>

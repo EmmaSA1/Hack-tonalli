@@ -10,26 +10,31 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { useAuthStore } from "../../src/store/authStore";
 import { COLORS } from "../../src/constants/colors";
+import { useLanguageStore } from "../../src/store/languageStore";
+import { LANG_LABELS, Lang } from "../../src/i18n/translations";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("demo@tonalli.xyz");
   const [password, setPassword] = useState("demo1234");
   const { login, isLoading } = useAuthStore();
+  const { tr, lang, setLang } = useLanguageStore();
+  const [showLangModal, setShowLangModal] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Por favor ingresa tu email y contraseña");
+      Alert.alert("Error", tr("auth.emailPasswordRequired"));
       return;
     }
     try {
       await login(email, password);
       router.replace("/(tabs)");
     } catch {
-      Alert.alert("Error", "Credenciales incorrectas. Intenta de nuevo.");
+      Alert.alert("Error", tr("auth.invalidCredentials"));
     }
   };
 
@@ -43,7 +48,7 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <Text style={styles.logo}>🌅</Text>
           <Text style={styles.brand}>Tonalli</Text>
-          <Text style={styles.tagline}>Aprende Web3. Gana XLM.</Text>
+          <Text style={styles.tagline}>{tr("auth.tagline")}</Text>
         </View>
 
         {/* Character greeting */}
@@ -51,17 +56,17 @@ export default function LoginScreen() {
           <Text style={styles.charEmoji}>🎺</Text>
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>
-              ¡Bienvenido de vuelta! Chima aquí. Lista para guiarte en tu aventura Web3. 🚀
+              {tr("auth.welcomeBack")}
             </Text>
           </View>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.formTitle}>Iniciar Sesión</Text>
+          <Text style={styles.formTitle}>{tr("auth.login")}</Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>📧 Email</Text>
+            <Text style={styles.label}>{tr("auth.email")}</Text>
             <TextInput
               style={styles.input}
               value={email}
@@ -74,7 +79,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>🔑 Contraseña</Text>
+            <Text style={styles.label}>{tr("auth.password")}</Text>
             <TextInput
               style={styles.input}
               value={password}
@@ -94,7 +99,7 @@ export default function LoginScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginBtnText}>Entrar 🚀</Text>
+              <Text style={styles.loginBtnText}>{tr("auth.enter")}</Text>
             )}
           </TouchableOpacity>
 
@@ -103,23 +108,63 @@ export default function LoginScreen() {
             onPress={handleLogin}
             activeOpacity={0.7}
           >
-            <Text style={styles.demoBtnText}>Probar demo →</Text>
+            <Text style={styles.demoBtnText}>{tr("auth.tryDemo")}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Register link */}
         <View style={styles.registerRow}>
-          <Text style={styles.registerText}>¿Nuevo en Tonalli? </Text>
+          <Text style={styles.registerText}>{tr("auth.newToTonalli")}</Text>
           <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
-            <Text style={styles.registerLink}>Crear cuenta</Text>
+            <Text style={styles.registerLink}>{tr("auth.createAccount")}</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Language selector */}
+        <TouchableOpacity style={styles.langBtn} onPress={() => setShowLangModal(true)} activeOpacity={0.7}>
+          <Text style={styles.langBtnText}>
+            {lang === "es" ? "🇲🇽" : lang === "en" ? "🇺🇸" : "🌽"} {LANG_LABELS[lang]}
+          </Text>
+        </TouchableOpacity>
+
         {/* Blockchain badge */}
         <View style={styles.stellarBadge}>
-          <Text style={styles.stellarText}>⭐ Powered by Stellar Blockchain</Text>
+          <Text style={styles.stellarText}>{tr("profile.poweredBy")}</Text>
         </View>
       </ScrollView>
+
+      {/* Language Modal */}
+      <Modal visible={showLangModal} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowLangModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{tr("language.title")}</Text>
+            {(["es", "en", "nah"] as Lang[]).map((l) => (
+              <TouchableOpacity
+                key={l}
+                style={[styles.langOption, lang === l && styles.langOptionActive]}
+                onPress={() => { setLang(l); setShowLangModal(false); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.langFlag}>
+                  {l === "es" ? "🇲🇽" : l === "en" ? "🇺🇸" : "🌽"}
+                </Text>
+                <Text style={[styles.langText, lang === l && styles.langTextActive]}>
+                  {LANG_LABELS[l]}
+                </Text>
+                {lang === l && (
+                  <View style={styles.langCurrentBadge}>
+                    <Text style={styles.langCurrentText}>{tr("language.current")}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -218,4 +263,59 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   stellarText: { color: COLORS.textSecondary, fontSize: 12, fontWeight: "600" },
+  langBtn: {
+    alignSelf: "center",
+    backgroundColor: COLORS.card,
+    borderRadius: 99,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  langBtnText: { color: COLORS.text, fontSize: 14, fontWeight: "600" },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  modalContent: {
+    backgroundColor: COLORS.card,
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    gap: 12,
+  },
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  langOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    gap: 14,
+  },
+  langOptionActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + "10",
+  },
+  langFlag: { fontSize: 28 },
+  langText: { color: COLORS.text, fontSize: 16, fontWeight: "600", flex: 1 },
+  langTextActive: { color: COLORS.primary, fontWeight: "800" },
+  langCurrentBadge: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 99,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  langCurrentText: { color: "#fff", fontSize: 11, fontWeight: "700" },
 });

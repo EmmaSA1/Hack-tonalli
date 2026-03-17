@@ -13,6 +13,7 @@ import { View, ActivityIndicator, Text, Image } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../src/store/authStore";
 import { useProgressStore } from "../src/store/progressStore";
+import { useLanguageStore } from "../src/store/languageStore";
 import { COLORS } from "../src/constants/colors";
 
 const queryClient = new QueryClient({
@@ -36,10 +37,12 @@ export default function RootLayout() {
   const progressHydrated = useProgressStore((s) => s.isHydrated);
   const hydrateAuth = useAuthStore((s) => s.hydrate);
   const hydrateProgress = useProgressStore((s) => s.hydrate);
+  const hydrateLang = useLanguageStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrateAuth();
     hydrateProgress();
+    hydrateLang();
   }, []);
 
   if (!fontsLoaded || !authHydrated || !progressHydrated) {
@@ -47,7 +50,7 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center", gap: 16 }}>
         <Image source={require("../assets/logo.png")} style={{ width: 80, height: 80 }} resizeMode="contain" />
         <ActivityIndicator color={COLORS.primary} size="large" />
-        <Text style={{ color: COLORS.textMuted, fontSize: 13 }}>Cargando Tonalli...</Text>
+        <Text style={{ color: COLORS.textMuted, fontSize: 13 }}>Loading Tonalli...</Text>
       </View>
     );
   }

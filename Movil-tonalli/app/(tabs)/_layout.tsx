@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { View, Text, StyleSheet } from "react-native";
 import { COLORS } from "../../src/constants/colors";
+import { useLanguageStore } from "../../src/store/languageStore";
 
 interface TabIconProps {
   emoji: string;
@@ -18,6 +19,8 @@ function TabIcon({ emoji, label, focused }: TabIconProps) {
 }
 
 export default function TabsLayout() {
+  const { tr } = useLanguageStore();
+
   return (
     <Tabs
       screenOptions={{
@@ -30,7 +33,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🏠" label="Inicio" focused={focused} />
+            <TabIcon emoji="🏠" label={tr("tab.home")} focused={focused} />
           ),
         }}
       />
@@ -38,7 +41,7 @@ export default function TabsLayout() {
         name="learn"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📚" label="Aprender" focused={focused} />
+            <TabIcon emoji="📚" label={tr("tab.learn")} focused={focused} />
           ),
         }}
       />
@@ -46,7 +49,7 @@ export default function TabsLayout() {
         name="leaderboard"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🏆" label="Ranking" focused={focused} />
+            <TabIcon emoji="🏆" label={tr("tab.ranking")} focused={focused} />
           ),
         }}
       />
@@ -54,7 +57,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="👤" label="Perfil" focused={focused} />
+            <TabIcon emoji="👤" label={tr("tab.profile")} focused={focused} />
           ),
         }}
       />

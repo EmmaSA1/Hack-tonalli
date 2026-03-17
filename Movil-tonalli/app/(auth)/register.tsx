@@ -14,29 +14,38 @@ import {
 import { router } from "expo-router";
 import { useAuthStore } from "../../src/store/authStore";
 import { COLORS } from "../../src/constants/colors";
+import { useLanguageStore } from "../../src/store/languageStore";
 
 export default function RegisterScreen() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { register, isLoading } = useAuthStore();
+  const { tr } = useLanguageStore();
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert("Error", "Por favor completa todos los campos");
+      Alert.alert("Error", tr("auth.allFieldsRequired"));
       return;
     }
     if (password.length < 6) {
-      Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres");
+      Alert.alert("Error", tr("auth.passwordMin"));
       return;
     }
     try {
       await register(name, email, password);
       router.replace("/(tabs)");
     } catch {
-      Alert.alert("Error", "No se pudo crear la cuenta. Intenta de nuevo.");
+      Alert.alert("Error", tr("auth.registerFailed"));
     }
   };
+
+  const perks = [
+    tr("auth.perk1"),
+    tr("auth.perk2"),
+    tr("auth.perk3"),
+    tr("auth.perk4"),
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -46,10 +55,10 @@ export default function RegisterScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backText}>← Volver</Text>
+            <Text style={styles.backText}>{tr("auth.back")}</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Crear Cuenta</Text>
-          <Text style={styles.subtitle}>Únete a miles aprendiendo Web3</Text>
+          <Text style={styles.title}>{tr("auth.createAccountTitle")}</Text>
+          <Text style={styles.subtitle}>{tr("auth.joinThousands")}</Text>
         </View>
 
         {/* Xollo welcome */}
@@ -57,7 +66,7 @@ export default function RegisterScreen() {
           <Text style={styles.charEmoji}>🐕</Text>
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>
-              ¡Guau! Soy Xollo y voy a cuidar tu racha de aprendizaje. ¡Regístrate y empieza tu aventura! 🌟
+              {tr("auth.xolloWelcome")}
             </Text>
           </View>
         </View>
@@ -65,19 +74,19 @@ export default function RegisterScreen() {
         {/* Form */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>👤 Nombre</Text>
+            <Text style={styles.label}>{tr("auth.name")}</Text>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="Tu nombre"
+              placeholder={tr("auth.namePlaceholder")}
               placeholderTextColor={COLORS.textMuted}
               autoCapitalize="words"
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>📧 Email</Text>
+            <Text style={styles.label}>{tr("auth.email")}</Text>
             <TextInput
               style={styles.input}
               value={email}
@@ -90,25 +99,20 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>🔑 Contraseña</Text>
+            <Text style={styles.label}>{tr("auth.password")}</Text>
             <TextInput
               style={styles.input}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              placeholder="Mínimo 6 caracteres"
+              placeholder={tr("auth.passwordPlaceholder")}
               placeholderTextColor={COLORS.textMuted}
             />
           </View>
 
           {/* Perks */}
           <View style={styles.perks}>
-            {[
-              "🎯 Aprende blockchain desde cero",
-              "💫 Gana XLM reales por aprender",
-              "🏆 Certificados NFT en Stellar",
-              "🔥 Mantén tu racha diaria",
-            ].map((perk) => (
+            {perks.map((perk) => (
               <View key={perk} style={styles.perkRow}>
                 <Text style={styles.perkText}>{perk}</Text>
               </View>
@@ -124,15 +128,15 @@ export default function RegisterScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.registerBtnText}>Comenzar Gratis 🚀</Text>
+              <Text style={styles.registerBtnText}>{tr("auth.startFree")}</Text>
             )}
           </TouchableOpacity>
         </View>
 
         <View style={styles.loginRow}>
-          <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
+          <Text style={styles.loginText}>{tr("auth.haveAccount")}</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.loginLink}>Iniciar sesión</Text>
+            <Text style={styles.loginLink}>{tr("auth.loginLink")}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

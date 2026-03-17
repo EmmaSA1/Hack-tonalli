@@ -17,12 +17,16 @@ import { COLORS } from "../../src/constants/colors";
 import { LESSONS } from "../../src/data/mockData";
 import XPBar from "../../src/components/XPBar";
 import StatCard from "../../src/components/StatCard";
+import { useLanguageStore } from "../../src/store/languageStore";
+import { getLessonsForLang } from "../../src/data/lessonTranslations";
 
 const XP_PER_LEVEL = 1000;
 
 export default function DashboardScreen() {
   const { user } = useAuthStore();
   const { totalXP, currentStreak, lessonsProgress } = useProgressStore();
+  const { tr, lang } = useLanguageStore();
+  const translatedLessons = getLessonsForLang(lang, LESSONS);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [refreshing, setRefreshing] = React.useState(false);
   const completedCount = Object.keys(lessonsProgress).length;
@@ -50,8 +54,8 @@ export default function DashboardScreen() {
 
   // Find next available lesson
   const nextLesson = (() => {
-    for (const moduleId of Object.keys(LESSONS)) {
-      for (const lesson of LESSONS[moduleId]) {
+    for (const moduleId of Object.keys(translatedLessons)) {
+      for (const lesson of translatedLessons[moduleId]) {
         if (!lessonsProgress[lesson.id]?.completed && !lesson.locked) return lesson;
       }
     }
@@ -60,15 +64,15 @@ export default function DashboardScreen() {
 
   const ACHIEVEMENTS = (() => {
     const list: { emoji: string; title: string; desc: string; date: string }[] = [];
-    if (completedCount >= 1) list.push({ emoji: "🚀", title: "Primera Lección", desc: "¡Completaste tu primera lección!", date: "Desbloqueado" });
-    if (completedCount >= 3) list.push({ emoji: "🔗", title: "Blockchain Básico", desc: "3 lecciones completadas", date: "Desbloqueado" });
-    if (completedCount >= 5) list.push({ emoji: "⭐", title: "Maestro Blockchain", desc: "¡Módulo 1 completado!", date: "Desbloqueado" });
-    if (effectiveStreak >= 5) list.push({ emoji: "🔥", title: `Racha de ${effectiveStreak}`, desc: `¡${effectiveStreak} lecciones seguidas!`, date: "Activo" });
+    if (completedCount >= 1) list.push({ emoji: "🚀", title: tr("achievement.firstLesson"), desc: tr("achievement.firstLessonDesc"), date: tr("achievement.unlocked") });
+    if (completedCount >= 3) list.push({ emoji: "🔗", title: tr("achievement.blockchainBasic"), desc: tr("achievement.blockchainBasicDesc"), date: tr("achievement.unlocked") });
+    if (completedCount >= 5) list.push({ emoji: "⭐", title: tr("achievement.blockchainMaster"), desc: tr("achievement.blockchainMasterDesc"), date: tr("achievement.unlocked") });
+    if (effectiveStreak >= 5) list.push({ emoji: "🔥", title: tr("achievement.streakTitle", { streak: effectiveStreak }), desc: tr("achievement.streakDesc", { streak: effectiveStreak }), date: tr("achievement.unlocked") });
     // Show locked achievements if few unlocked
     if (list.length < 3) {
-      if (completedCount < 1) list.push({ emoji: "🔒", title: "Primera Lección", desc: "Completa tu primera lección", date: "Bloqueado" });
-      if (completedCount < 3) list.push({ emoji: "🔒", title: "Blockchain Básico", desc: "Completa 3 lecciones", date: "Bloqueado" });
-      if (completedCount < 5) list.push({ emoji: "🔒", title: "Maestro Blockchain", desc: "Completa 5 lecciones", date: "Bloqueado" });
+      if (completedCount < 1) list.push({ emoji: "🔒", title: tr("achievement.firstLesson"), desc: tr("achievement.complete1"), date: tr("achievement.locked") });
+      if (completedCount < 3) list.push({ emoji: "🔒", title: tr("achievement.blockchainBasic"), desc: tr("achievement.complete3"), date: tr("achievement.locked") });
+      if (completedCount < 5) list.push({ emoji: "🔒", title: tr("achievement.blockchainMaster"), desc: tr("achievement.complete5"), date: tr("achievement.locked") });
     }
     return list.slice(0, 4);
   })();
@@ -86,9 +90,9 @@ export default function DashboardScreen() {
             <View>
               <Text style={styles.greeting}>{(() => {
                 const h = new Date().getHours();
-                if (h < 12) return "Buenos días,";
-                if (h < 18) return "Buenas tardes,";
-                return "Buenas noches,";
+                if (h < 12) return tr("home.goodMorning");
+                if (h < 18) return tr("home.goodAfternoon");
+                return tr("home.goodEvening");
               })()}</Text>
               <Text style={styles.userName}>{user?.name?.split(" ")[0] ?? "Explorador"} 👋</Text>
             </View>
@@ -103,33 +107,33 @@ export default function DashboardScreen() {
         <View style={styles.chimaCard}>
           <Text style={styles.chimaEmoji}>🎺</Text>
           <View style={styles.chimaContent}>
-            <Text style={styles.chimaName}>Chima dice:</Text>
+            <Text style={styles.chimaName}>{tr("home.chimaSays")}</Text>
             <Text style={styles.chimaMsg}>
               {effectiveStreak > 0
-                ? `¡Excelente racha! Tienes ${effectiveStreak} lecciones completadas. ${nextLesson ? `¡Hoy aprendemos sobre ${nextLesson.title}!` : "¡Completaste todo!"}`
-                : "¡Bienvenido a Tonalli! Comienza tu primera lección y empieza a ganar XLM."}
+                ? `${tr("home.chimaStreak", { streak: effectiveStreak })} ${nextLesson ? tr("home.chimaToday", { lesson: nextLesson.title }) : tr("home.chimaComplete")}`
+                : tr("home.chimaWelcome")}
             </Text>
           </View>
         </View>
 
         {/* XP Progress */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tu Progreso</Text>
+          <Text style={styles.sectionTitle}>{tr("home.progress")}</Text>
           <View style={styles.xpCard}>
             <XPBar current={xpInLevel} max={XP_PER_LEVEL} level={level} />
             <Text style={styles.xpSubtext}>
-              {XP_PER_LEVEL - xpInLevel} XP para el siguiente nivel
+              {tr("home.xpToNext", { xp: XP_PER_LEVEL - xpInLevel })}
             </Text>
           </View>
         </View>
 
         {/* Stats Grid */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Estadísticas</Text>
+          <Text style={styles.sectionTitle}>{tr("home.stats")}</Text>
           <View style={styles.statsGrid}>
-            <StatCard emoji="⚡" label="XP Total" value={effectiveXP.toLocaleString()} color={COLORS.primary} />
-            <StatCard emoji="🔥" label="Racha" value={`${effectiveStreak}`} color="#FF4757" />
-            <StatCard emoji="📚" label="Lecciones" value={completedCount} color={COLORS.success} />
+            <StatCard emoji="⚡" label={tr("home.xpTotal")} value={effectiveXP.toLocaleString()} color={COLORS.primary} />
+            <StatCard emoji="🔥" label={tr("home.streak")} value={`${effectiveStreak}`} color="#FF4757" />
+            <StatCard emoji="📚" label={tr("home.lessons")} value={completedCount} color={COLORS.success} />
             <StatCard emoji="💫" label="XLM" value={(user?.xlmBalance ?? 0).toFixed(1)} color={COLORS.accent} />
           </View>
         </View>
@@ -137,7 +141,7 @@ export default function DashboardScreen() {
         {/* Daily Lesson CTA */}
         {nextLesson && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Siguiente Lección</Text>
+            <Text style={styles.sectionTitle}>{tr("home.nextLesson")}</Text>
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
               <TouchableOpacity
                 style={styles.dailyCard}
@@ -147,7 +151,7 @@ export default function DashboardScreen() {
                 <View style={styles.dailyLeft}>
                   <Text style={styles.dailyEmoji}>{nextLesson.emoji}</Text>
                   <View>
-                    <Text style={styles.dailyBadge}>SIGUIENTE · +{nextLesson.xpReward} XP</Text>
+                    <Text style={styles.dailyBadge}>{tr("home.next")} · +{nextLesson.xpReward} XP</Text>
                     <Text style={styles.dailyTitle}>{nextLesson.title}</Text>
                     <Text style={styles.dailyMeta}>{nextLesson.duration} · Módulo {nextLesson.moduleId.replace("m", "")}</Text>
                   </View>
@@ -162,7 +166,7 @@ export default function DashboardScreen() {
 
         {/* Recent Achievements */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Logros Recientes</Text>
+          <Text style={styles.sectionTitle}>{tr("home.achievements")}</Text>
           <View style={styles.achievementsList}>
             {ACHIEVEMENTS.map((a, i) => (
               <View key={i} style={styles.achievementItem}>
@@ -183,11 +187,11 @@ export default function DashboardScreen() {
         <View style={[styles.xolloCard, { marginBottom: 24 }]}>
           <Text style={{ fontSize: 36 }}>🐕</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.xolloTitle}>Xollo te recuerda:</Text>
+            <Text style={styles.xolloTitle}>{tr("home.xolloReminder")}</Text>
             <Text style={styles.xolloMsg}>
               {completedCount === 0
-                ? "¡Comienza tu aventura! Tu primera lección te espera. ¡Gana XP y XLM! 🚀"
-                : `¡No pares! Llevas ${completedCount} lecciones. ¡Sigue aprendiendo para ganar más XLM! 🔥`}
+                ? tr("home.xolloStart")
+                : tr("home.xolloContinue", { count: completedCount })}
             </Text>
           </View>
         </View>
