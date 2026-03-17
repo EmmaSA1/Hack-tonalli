@@ -27,7 +27,9 @@ export default function QuizScreen() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [answerState, setAnswerState] = useState<AnswerState>("idle");
   const [correctCount, setCorrectCount] = useState(0);
+  const [lives, setLives] = useState(3);
   const [finished, setFinished] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -64,11 +66,17 @@ export default function QuizScreen() {
     } else {
       setAnswerState("wrong");
       shakeWrong();
+      const newLives = lives - 1;
+      setLives(newLives);
+      if (newLives <= 0) {
+        setGameOver(true);
+      }
     }
     setShowExplanation(true);
   };
 
   const handleNext = () => {
+    if (gameOver) return;
     if (currentQ + 1 < quiz.questions.length) {
       setCurrentQ((q) => q + 1);
       setSelectedIdx(null);
@@ -103,6 +111,59 @@ export default function QuizScreen() {
     if (idx === selectedIdx && answerState === "wrong") return [styles.optionText, styles.optionTextWrong];
     return [styles.optionText, styles.optionTextDimmed];
   };
+
+  // Game Over screen
+  if (gameOver) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scoreContainer}>
+          <Text style={styles.scoreEmoji}>💔</Text>
+          <Text style={styles.scoreTitle}>¡Sin vidas!</Text>
+
+          <View style={styles.scoreCard}>
+            <Text style={styles.scorePercent}>0</Text>
+            <Text style={styles.scoreSubtitle}>Te quedaste sin vidas</Text>
+          </View>
+
+          <View style={styles.chimaBubble}>
+            <Text style={{ fontSize: 40 }}>🎺</Text>
+            <View style={styles.bubbleBox}>
+              <Text style={styles.bubbleName}>Chima dice:</Text>
+              <Text style={styles.bubbleMsg}>
+                No te rindas, repasa la lección y vuelve a intentarlo. ¡Tú puedes!
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.scoreActions}>
+            <TouchableOpacity
+              style={styles.nextLessonBtn}
+              onPress={() => {
+                setCurrentQ(0);
+                setSelectedIdx(null);
+                setAnswerState("idle");
+                setCorrectCount(0);
+                setLives(3);
+                setGameOver(false);
+                setShowExplanation(false);
+                setFinished(false);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.nextLessonBtnText}>Reintentar 🔄</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.homeBtn}
+              onPress={() => router.replace("/(tabs)")}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.homeBtnText}>Ir al Inicio 🏠</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   // Score screen
   if (finished) {
@@ -216,7 +277,7 @@ export default function QuizScreen() {
           <Text style={styles.progressLabel}>{currentQ + 1}/{quiz.questions.length}</Text>
         </View>
         <View style={styles.heartContainer}>
-          <Text style={styles.heartText}>❤️❤️❤️</Text>
+          <Text style={styles.heartText}>{"❤️".repeat(lives)}{"🖤".repeat(3 - lives)}</Text>
         </View>
       </View>
 
