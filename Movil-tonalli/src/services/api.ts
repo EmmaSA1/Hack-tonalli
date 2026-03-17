@@ -1,10 +1,13 @@
 import axios from "axios";
+import { useAuthStore } from "../store/authStore";
 
-// Use your computer's LAN IP for testing on physical device
-// e.g., http://192.168.1.X:3001
+// Change to your backend URL
+// For physical device on same WiFi: http://192.168.X.X:3001
+// For emulator: http://10.0.2.2:3001 (Android) or http://localhost:3001 (iOS)
 const BASE_URL = "http://localhost:3001";
 
-const USE_MOCK = true; // Toggle for demo
+// Set to false to connect to the real backend
+const USE_MOCK = true;
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -14,10 +17,9 @@ const apiClient = axios.create({
   },
 });
 
-// Auto-attach JWT token
+// Auto-attach JWT token from store
 apiClient.interceptors.request.use((config) => {
-  // Token would come from store in real app
-  const token = "mock-jwt-token";
+  const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,7 +29,10 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.warn("API Error:", error.message);
+    // Auto-logout on 401
+    if (error.response?.status === 401) {
+      useAuthStore.getState().logout();
+    }
     return Promise.reject(error);
   }
 );
@@ -37,7 +42,20 @@ export const authApi = {
   login: async (email: string, password: string) => {
     if (USE_MOCK) {
       await new Promise((r) => setTimeout(r, 1000));
-      return { token: "mock-token", user: { id: "u1", email, name: "Demo User" } };
+      return {
+        token: "mock-token-" + Date.now(),
+        user: {
+          id: "u1",
+          email,
+          name: email.split("@")[0],
+          level: 1,
+          xp: 0,
+          streak: 0,
+          xlmBalance: 0,
+          lessonsCompleted: 0,
+          walletAddress: "",
+        },
+      };
     }
     const res = await apiClient.post("/auth/login", { email, password });
     return res.data;
@@ -46,7 +64,20 @@ export const authApi = {
   register: async (name: string, email: string, password: string) => {
     if (USE_MOCK) {
       await new Promise((r) => setTimeout(r, 1200));
-      return { token: "mock-token", user: { id: "u1", email, name } };
+      return {
+        token: "mock-token-" + Date.now(),
+        user: {
+          id: "u-" + Date.now(),
+          email,
+          name,
+          level: 1,
+          xp: 0,
+          streak: 0,
+          xlmBalance: 0,
+          lessonsCompleted: 0,
+          walletAddress: "",
+        },
+      };
     }
     const res = await apiClient.post("/auth/register", { name, email, password });
     return res.data;
@@ -76,7 +107,11 @@ export const lessonsApi = {
   completeLesson: async (lessonId: string, score: number) => {
     if (USE_MOCK) {
       await new Promise((r) => setTimeout(r, 500));
-      return { xpAwarded: 100, xlmAwarded: 0.5, nftMinted: false };
+      return {
+        xpAwarded: 100,
+        xlmAwarded: score === 100 ? 0.55 : 0.5,
+        nftMinted: score === 100,
+      };
     }
     const res = await apiClient.post(`/lessons/${lessonId}/complete`, { score });
     return res.data;

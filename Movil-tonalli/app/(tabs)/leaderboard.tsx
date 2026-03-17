@@ -8,10 +8,28 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../../src/constants/colors";
 import { LEADERBOARD } from "../../src/data/mockData";
+import { useAuthStore } from "../../src/store/authStore";
+import { useProgressStore } from "../../src/store/progressStore";
 
 export default function LeaderboardScreen() {
-  const top3 = LEADERBOARD.slice(0, 3);
-  const rest = LEADERBOARD.slice(3);
+  const { user } = useAuthStore();
+  const { totalXP, currentStreak } = useProgressStore();
+
+  // Replace "Tú" entry with real user data
+  const leaderboard = LEADERBOARD.map((entry) => {
+    if ((entry as any).isCurrentUser) {
+      return {
+        ...entry,
+        name: user?.name ?? "Tú",
+        xp: totalXP || entry.xp,
+        streak: currentStreak || entry.streak,
+      };
+    }
+    return entry;
+  }).sort((a, b) => b.xp - a.xp).map((e, i) => ({ ...e, rank: i + 1 }));
+
+  const top3 = leaderboard.slice(0, 3);
+  const rest = leaderboard.slice(3);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>

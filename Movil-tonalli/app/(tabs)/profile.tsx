@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuthStore } from "../../src/store/authStore";
+import { useProgressStore } from "../../src/store/progressStore";
 import { COLORS } from "../../src/constants/colors";
 import { CERTIFICATES } from "../../src/data/mockData";
 import XPBar from "../../src/components/XPBar";
@@ -18,14 +19,20 @@ const XP_PER_LEVEL = 1000;
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
-  const xpInLevel = (user?.xp ?? 0) % XP_PER_LEVEL;
-  const level = Math.floor((user?.xp ?? 0) / XP_PER_LEVEL) + 1;
+  const { totalXP, currentStreak, lessonsProgress } = useProgressStore();
+  const effectiveXP = totalXP || (user?.xp ?? 0);
+  const xpInLevel = effectiveXP % XP_PER_LEVEL;
+  const level = Math.floor(effectiveXP / XP_PER_LEVEL) + 1;
+  const completedCount = Object.keys(lessonsProgress).length;
+
+  const resetProgress = useProgressStore((s) => s.reset);
 
   const handleLogout = () => {
     Alert.alert("Cerrar Sesión", "¿Estás seguro de que quieres salir?", [
       { text: "Cancelar", style: "cancel" },
       { text: "Salir", style: "destructive", onPress: () => {
         logout();
+        resetProgress();
         router.replace("/(auth)/login");
       }},
     ]);
@@ -75,10 +82,10 @@ export default function ProfileScreen() {
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {[
-            { emoji: "⚡", label: "XP Total", value: (user?.xp ?? 3400).toLocaleString(), color: COLORS.primary },
-            { emoji: "🔥", label: "Racha", value: `${user?.streak ?? 7} días`, color: "#FF4757" },
-            { emoji: "📚", label: "Lecciones", value: user?.lessonsCompleted ?? 4, color: COLORS.success },
-            { emoji: "💫", label: "XLM Ganados", value: `${user?.xlmBalance ?? 15.5} XLM`, color: COLORS.accent },
+            { emoji: "⚡", label: "XP Total", value: effectiveXP.toLocaleString(), color: COLORS.primary },
+            { emoji: "🔥", label: "Racha", value: `${currentStreak || (user?.streak ?? 0)}`, color: "#FF4757" },
+            { emoji: "📚", label: "Lecciones", value: completedCount, color: COLORS.success },
+            { emoji: "💫", label: "XLM Ganados", value: `${(user?.xlmBalance ?? 0).toFixed(1)} XLM`, color: COLORS.accent },
           ].map((stat, i) => (
             <View key={i} style={[styles.statCard, { borderColor: stat.color + "30" }]}>
               <Text style={styles.statEmoji}>{stat.emoji}</Text>

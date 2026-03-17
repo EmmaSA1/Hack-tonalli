@@ -76,15 +76,17 @@ export default function QuizScreen() {
       setShowExplanation(false);
       animateProgress((currentQ + 1) / quiz.questions.length);
     } else {
-      // Quiz finished
-      const score = Math.round(((correctCount + (answerState === "correct" ? 1 : 0)) / quiz.questions.length) * 100);
-      setFinished(true);
-      const finalCorrect = correctCount + (answerState === "correct" ? 1 : 0);
-      const finalScore = Math.round((finalCorrect / quiz.questions.length) * 100);
+      // Quiz finished — correctCount already includes current answer via handleAnswer
+      const finalScore = Math.round((correctCount / quiz.questions.length) * 100);
       completeLesson(id ?? "", finalScore, 100);
       if (user) {
-        updateUser({ xp: (user.xp ?? 0) + 100 });
+        updateUser({
+          xp: (user.xp ?? 0) + 100,
+          lessonsCompleted: (user.lessonsCompleted ?? 0) + 1,
+          xlmBalance: (user.xlmBalance ?? 0) + (finalScore === 100 ? 0.55 : 0.5),
+        });
       }
+      setFinished(true);
     }
   };
 
@@ -104,9 +106,8 @@ export default function QuizScreen() {
 
   // Score screen
   if (finished) {
-    const finalCorrect = correctCount;
     const total = quiz.questions.length;
-    const score = Math.round((finalCorrect / total) * 100);
+    const score = Math.round((correctCount / total) * 100);
     const isPerfect = score === 100;
     const isGood = score >= 70;
 
@@ -120,7 +121,7 @@ export default function QuizScreen() {
 
           <View style={styles.scoreCard}>
             <Text style={styles.scorePercent}>{score}%</Text>
-            <Text style={styles.scoreSubtitle}>{finalCorrect}/{total} respuestas correctas</Text>
+            <Text style={styles.scoreSubtitle}>{correctCount}/{total} respuestas correctas</Text>
           </View>
 
           {/* NFT Badge if perfect */}

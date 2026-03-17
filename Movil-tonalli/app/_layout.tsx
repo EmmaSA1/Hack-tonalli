@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -9,9 +9,10 @@ import {
   Nunito_700Bold,
   Nunito_800ExtraBold,
 } from "@expo-google-fonts/nunito";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Text, Image } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../src/store/authStore";
+import { useProgressStore } from "../src/store/progressStore";
 import { COLORS } from "../src/constants/colors";
 
 const queryClient = new QueryClient({
@@ -31,10 +32,22 @@ export default function RootLayout() {
     Nunito_800ExtraBold,
   });
 
-  if (!fontsLoaded) {
+  const authHydrated = useAuthStore((s) => s.isHydrated);
+  const progressHydrated = useProgressStore((s) => s.isHydrated);
+  const hydrateAuth = useAuthStore((s) => s.hydrate);
+  const hydrateProgress = useProgressStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateAuth();
+    hydrateProgress();
+  }, []);
+
+  if (!fontsLoaded || !authHydrated || !progressHydrated) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <Image source={require("../assets/logo.png")} style={{ width: 80, height: 80 }} resizeMode="contain" />
         <ActivityIndicator color={COLORS.primary} size="large" />
+        <Text style={{ color: COLORS.textMuted, fontSize: 13 }}>Cargando Tonalli...</Text>
       </View>
     );
   }

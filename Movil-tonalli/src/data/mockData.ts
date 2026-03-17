@@ -233,50 +233,226 @@ export const QUIZZES: Record<string, any> = {
     questions: [
       {
         id: "q1",
-        question: "What is a blockchain?",
+        question: "¿Qué es una blockchain?",
         options: [
-          "A centralized database owned by one company",
-          "A distributed ledger that records transactions across many computers",
-          "A type of cryptocurrency",
-          "A government financial system",
+          "Una base de datos centralizada de una empresa",
+          "Un libro contable distribuido que registra transacciones en muchas computadoras",
+          "Un tipo de criptomoneda",
+          "Un sistema financiero gubernamental",
         ],
         correctIndex: 1,
         explanation:
-          "A blockchain is a distributed, decentralized ledger that records transactions across many computers with no single owner.",
+          "Una blockchain es un libro contable distribuido y descentralizado que registra transacciones en muchas computadoras sin un solo propietario.",
       },
       {
         id: "q2",
-        question: "What happens to data once it's recorded on a blockchain?",
+        question: "¿Qué sucede con los datos una vez registrados en una blockchain?",
         options: [
-          "It can be easily edited by admins",
-          "It expires after 30 days",
-          "It is nearly impossible to change or delete",
-          "It gets automatically deleted after 1 year",
+          "Pueden ser editados fácilmente por admins",
+          "Expiran después de 30 días",
+          "Es casi imposible cambiarlos o eliminarlos",
+          "Se eliminan automáticamente después de 1 año",
         ],
         correctIndex: 2,
         explanation:
-          "Blockchain data is immutable — once recorded, it's cryptographically secured and nearly impossible to alter.",
+          "Los datos en blockchain son inmutables — una vez registrados, están criptográficamente asegurados y es casi imposible alterarlos.",
       },
       {
         id: "q3",
-        question: "What does each 'block' in a blockchain contain?",
+        question: "¿Qué contiene cada 'bloque' en una blockchain?",
         options: [
-          "A single large file",
-          "User passwords",
-          "A set of transactions",
-          "Browser cookies",
+          "Un solo archivo grande",
+          "Contraseñas de usuarios",
+          "Un conjunto de transacciones",
+          "Cookies del navegador",
         ],
         correctIndex: 2,
         explanation:
-          "Each block contains a set of validated transactions. When full, it's chained to the previous block.",
+          "Cada bloque contiene un conjunto de transacciones validadas. Cuando está lleno, se encadena al bloque anterior.",
       },
       {
         id: "q4",
-        question: "Which of these is NOT a characteristic of blockchain?",
-        options: ["Decentralized", "Transparent", "Owned by banks", "Secure"],
+        question: "¿Cuál NO es una característica de blockchain?",
+        options: ["Descentralizada", "Transparente", "Propiedad de bancos", "Segura"],
         correctIndex: 2,
         explanation:
-          "Blockchain is NOT owned by banks — it's decentralized with no single owner, making it open and trustless.",
+          "Blockchain NO es propiedad de bancos — es descentralizada, sin un solo propietario, haciéndola abierta y sin necesidad de confianza.",
+      },
+    ],
+  },
+  l2: {
+    lessonId: "l2",
+    questions: [
+      {
+        id: "q2_1",
+        question: "¿Qué se necesita para autorizar una transacción en blockchain?",
+        options: [
+          "Una contraseña de correo",
+          "Una firma con llave privada",
+          "Aprobación de un banco",
+          "Un código SMS",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Cada transacción se firma con una llave privada — tu firma digital que prueba que tú la autorizaste.",
+      },
+      {
+        id: "q2_2",
+        question: "¿Quién valida las transacciones antes de añadirlas a un bloque?",
+        options: [
+          "Los bancos centrales",
+          "Los validadores o mineros de la red",
+          "El gobierno",
+          "El usuario que envía",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Los validadores (o mineros en algunas redes) verifican que la transacción sea válida y la añaden al siguiente bloque.",
+      },
+      {
+        id: "q2_3",
+        question: "¿Qué es una transacción en blockchain?",
+        options: [
+          "Un mensaje de texto",
+          "Un registro de transferencia de valor entre dos partes",
+          "Una actualización de software",
+          "Un archivo compartido",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Una transacción blockchain es un registro de transferencia de valor entre dos partes que debe ser validado por la red.",
+      },
+    ],
+  },
+  l3: {
+    lessonId: "l3",
+    questions: [
+      {
+        id: "q3_1",
+        question: "¿Qué es un mecanismo de consenso?",
+        options: [
+          "Un tipo de criptomoneda",
+          "El método por el cual los nodos acuerdan el estado del libro contable",
+          "Un contrato legal",
+          "Una base de datos centralizada",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Un mecanismo de consenso es el método por el cual los nodos de la red acuerdan sobre el estado actual del libro contable.",
+      },
+      {
+        id: "q3_2",
+        question: "¿Cuál mecanismo de consenso usa Bitcoin?",
+        options: [
+          "Proof of Stake (PoS)",
+          "Stellar Consensus Protocol (SCP)",
+          "Proof of Work (PoW)",
+          "Delegated Proof of Stake",
+        ],
+        correctIndex: 2,
+        explanation:
+          "Bitcoin usa Proof of Work (PoW), que es intensivo en energía pero fue el primer mecanismo de consenso exitoso.",
+      },
+      {
+        id: "q3_3",
+        question: "¿Qué ventaja tiene el Stellar Consensus Protocol?",
+        options: [
+          "Consume mucha energía",
+          "Es rápido y de bajo consumo energético",
+          "Solo funciona con Bitcoin",
+          "Requiere hardware especializado",
+        ],
+        correctIndex: 1,
+        explanation:
+          "El Stellar Consensus Protocol (SCP) es rápido y de bajo consumo energético, a diferencia de PoW.",
+      },
+    ],
+  },
+  l4: {
+    lessonId: "l4",
+    questions: [
+      {
+        id: "q4_1",
+        question: "¿Cuál es la función de la llave pública?",
+        options: [
+          "Firmar transacciones en secreto",
+          "Servir como tu dirección visible para todos",
+          "Desbloquear tu teléfono",
+          "Acceder a tu correo electrónico",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Tu llave pública es tu dirección, visible para todos. Es como tu número de cuenta bancaria.",
+      },
+      {
+        id: "q4_2",
+        question: "¿Qué pasa si pierdes tu llave privada?",
+        options: [
+          "Puedes resetearla con tu email",
+          "El banco te da una nueva",
+          "Pierdes acceso a tus activos para siempre",
+          "Se genera automáticamente otra",
+        ],
+        correctIndex: 2,
+        explanation:
+          "Si pierdes tu llave privada, pierdes acceso a tus activos para siempre. No existe opción de reseteo de contraseña.",
+      },
+      {
+        id: "q4_3",
+        question: "¿Qué NUNCA debes hacer con tu llave privada?",
+        options: [
+          "Guardarla en un lugar seguro",
+          "Compartirla con alguien",
+          "Hacer un respaldo",
+          "Memorizarla",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Tu llave privada es tu contraseña — NUNCA la compartas con nadie. Quien la tenga, controla tus activos.",
+      },
+    ],
+  },
+  l5: {
+    lessonId: "l5",
+    questions: [
+      {
+        id: "q5_1",
+        question: "¿Qué almacena realmente una wallet crypto?",
+        options: [
+          "Tus criptomonedas directamente",
+          "Tus llaves privadas",
+          "Archivos del blockchain",
+          "Tu historial de navegación",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Una wallet no almacena tus cripto — almacena tus llaves privadas. Los activos viven en la blockchain.",
+      },
+      {
+        id: "q5_2",
+        question: "¿Cuál es la diferencia entre hot wallet y cold wallet?",
+        options: [
+          "El color del diseño",
+          "Hot está conectada a internet, cold está offline",
+          "Hot es gratis, cold es de pago",
+          "No hay diferencia",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Hot wallets están conectadas a internet (convenientes), cold wallets están offline (máxima seguridad).",
+      },
+      {
+        id: "q5_3",
+        question: "En una wallet non-custodial, ¿quién controla las llaves?",
+        options: [
+          "La empresa que creó la wallet",
+          "El gobierno",
+          "Tú mismo",
+          "Los mineros",
+        ],
+        correctIndex: 2,
+        explanation:
+          "En una wallet non-custodial tú controlas tus propias llaves. En una custodial, un tercero las controla por ti.",
       },
     ],
   },
@@ -284,33 +460,67 @@ export const QUIZZES: Record<string, any> = {
     lessonId: "l6",
     questions: [
       {
-        id: "q5",
-        question: "How fast does Stellar process transactions?",
-        options: ["10 minutes", "1 hour", "3-5 seconds", "24 hours"],
+        id: "q6_1",
+        question: "¿Qué tan rápido procesa transacciones Stellar?",
+        options: ["10 minutos", "1 hora", "3-5 segundos", "24 horas"],
         correctIndex: 2,
         explanation:
-          "Stellar is extremely fast, processing transactions in just 3-5 seconds.",
+          "Stellar es extremadamente rápido, procesando transacciones en solo 3-5 segundos.",
       },
       {
-        id: "q6",
-        question: "What is Stellar's primary focus?",
+        id: "q6_2",
+        question: "¿Cuál es el enfoque principal de Stellar?",
         options: [
-          "Gaming NFTs",
-          "Fast, low-cost cross-border payments",
-          "Decentralized social media",
-          "Cloud storage",
+          "NFTs para gaming",
+          "Pagos transfronterizos rápidos y de bajo costo",
+          "Redes sociales descentralizadas",
+          "Almacenamiento en la nube",
         ],
         correctIndex: 1,
         explanation:
-          "Stellar focuses on enabling fast, low-cost cross-border payments and financial inclusion.",
+          "Stellar se enfoca en permitir pagos transfronterizos rápidos, de bajo costo, y la inclusión financiera.",
       },
       {
-        id: "q7",
-        question: "When was Stellar founded?",
+        id: "q6_3",
+        question: "¿En qué año se fundó Stellar?",
         options: ["2009", "2012", "2014", "2020"],
         correctIndex: 2,
         explanation:
-          "Stellar was founded in 2014 by Jed McCaleb and Joyce Kim.",
+          "Stellar fue fundada en 2014 por Jed McCaleb y Joyce Kim.",
+      },
+    ],
+  },
+  l7: {
+    lessonId: "l7",
+    questions: [
+      {
+        id: "q7_1",
+        question: "¿Cuál es el balance mínimo para abrir una cuenta Stellar?",
+        options: ["0 XLM", "0.5 XLM", "1 XLM", "10 XLM"],
+        correctIndex: 2,
+        explanation:
+          "Se necesita un mínimo de 1 XLM para abrir una cuenta en la red Stellar.",
+      },
+      {
+        id: "q7_2",
+        question: "¿Cuánto cuesta una transacción en Stellar?",
+        options: ["1 XLM", "0.01 XLM", "0.00001 XLM", "Es gratis"],
+        correctIndex: 2,
+        explanation:
+          "Las transacciones en Stellar cuestan solo 0.00001 XLM, una fracción de centavo.",
+      },
+      {
+        id: "q7_3",
+        question: "¿Cómo se crearon los Lumens (XLM)?",
+        options: [
+          "Se minan como Bitcoin",
+          "Se crearon todos al inicio (génesis)",
+          "Se generan diariamente",
+          "Los crean los usuarios",
+        ],
+        correctIndex: 1,
+        explanation:
+          "No hay minería — todos los 50 billones de XLM fueron creados al inicio (génesis) de la red.",
       },
     ],
   },

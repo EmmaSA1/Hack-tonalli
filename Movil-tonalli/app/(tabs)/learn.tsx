@@ -17,15 +17,18 @@ export default function LearnScreen() {
   const [expandedModule, setExpandedModule] = useState<string | null>("m1");
   const { isLessonCompleted } = useProgressStore();
 
-  const sections = MODULES.map((mod) => ({
-    module: mod,
-    data: expandedModule === mod.id ? (LESSONS[mod.id] ?? []) : [],
-  }));
-
   const getModuleProgress = (moduleId: string) => {
     const lessons = LESSONS[moduleId] ?? [];
-    const completed = lessons.filter((l) => isLessonCompleted(l.id)).length;
+    const completed = lessons.filter((l: any) => isLessonCompleted(l.id)).length;
     return { completed, total: lessons.length, percent: lessons.length ? completed / lessons.length : 0 };
+  };
+
+  // A module is unlocked if: it's the first module, OR the previous module has >= 60% completion
+  const isModuleUnlocked = (modIndex: number) => {
+    if (modIndex === 0) return true;
+    const prevModule = MODULES[modIndex - 1];
+    const prevProgress = getModuleProgress(prevModule.id);
+    return prevProgress.percent >= 0.6;
   };
 
   return (
@@ -60,28 +63,30 @@ export default function LearnScreen() {
 
         {/* Modules */}
         <View style={styles.modulesContainer}>
-          {MODULES.map((mod) => {
+          {MODULES.map((mod, modIndex) => {
             const progress = getModuleProgress(mod.id);
             const isExpanded = expandedModule === mod.id;
             const lessons = LESSONS[mod.id] ?? [];
+            const unlocked = isModuleUnlocked(modIndex);
+            const locked = !unlocked;
 
             return (
-              <View key={mod.id} style={[styles.moduleWrapper, mod.locked && styles.moduleWrapperLocked]}>
+              <View key={mod.id} style={[styles.moduleWrapper, locked && styles.moduleWrapperLocked]}>
                 {/* Module Header */}
                 <TouchableOpacity
-                  style={[styles.moduleHeader, { borderColor: mod.locked ? COLORS.border : mod.color + "50" }]}
-                  onPress={() => !mod.locked && setExpandedModule(isExpanded ? null : mod.id)}
-                  activeOpacity={mod.locked ? 1 : 0.85}
+                  style={[styles.moduleHeader, { borderColor: locked ? COLORS.border : mod.color + "50" }]}
+                  onPress={() => !locked && setExpandedModule(isExpanded ? null : mod.id)}
+                  activeOpacity={locked ? 1 : 0.85}
                 >
-                  <View style={[styles.moduleIconWrap, { backgroundColor: mod.locked ? COLORS.cardAlt : mod.color + "20" }]}>
-                    <Text style={{ fontSize: 28 }}>{mod.locked ? "🔒" : mod.emoji}</Text>
+                  <View style={[styles.moduleIconWrap, { backgroundColor: locked ? COLORS.cardAlt : mod.color + "20" }]}>
+                    <Text style={{ fontSize: 28 }}>{locked ? "🔒" : mod.emoji}</Text>
                   </View>
                   <View style={styles.moduleInfo}>
                     <View style={styles.moduleTitleRow}>
-                      <Text style={[styles.moduleTitle, mod.locked && styles.textMuted]}>
+                      <Text style={[styles.moduleTitle, locked && styles.textMuted]}>
                         {mod.title}
                       </Text>
-                      {mod.locked && (
+                      {locked && (
                         <View style={styles.lockedBadge}>
                           <Text style={styles.lockedBadgeText}>Bloqueado</Text>
                         </View>
@@ -95,7 +100,7 @@ export default function LearnScreen() {
                       <Text style={styles.progressText}>{progress.completed}/{progress.total}</Text>
                     </View>
                   </View>
-                  {!mod.locked && (
+                  {!locked && (
                     <Text style={[styles.chevron, { color: mod.color }]}>
                       {isExpanded ? "▼" : "▶"}
                     </Text>
@@ -103,11 +108,13 @@ export default function LearnScreen() {
                 </TouchableOpacity>
 
                 {/* Lessons List */}
-                {isExpanded && !mod.locked && (
+                {isExpanded && !locked && (
                   <View style={styles.lessonsContainer}>
                     {lessons.map((lesson, idx) => {
                       const completed = isLessonCompleted(lesson.id);
-                      const isLocked = lesson.locked && !completed;
+                      // A lesson is available if all previous lessons in the module are completed
+                      const previousAllCompleted = lessons.slice(0, idx).every((l: any) => isLessonCompleted(l.id));
+                      const isLocked = !completed && !previousAllCompleted;
 
                       return (
                         <TouchableOpacity

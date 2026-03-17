@@ -12,7 +12,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useAuthStore } from "../../src/store/authStore";
+import { useProgressStore } from "../../src/store/progressStore";
 import { COLORS } from "../../src/constants/colors";
+import { LESSONS } from "../../src/data/mockData";
 import XPBar from "../../src/components/XPBar";
 import StatCard from "../../src/components/StatCard";
 
@@ -20,8 +22,10 @@ const XP_PER_LEVEL = 1000;
 
 export default function DashboardScreen() {
   const { user } = useAuthStore();
+  const { totalXP, currentStreak, lessonsProgress } = useProgressStore();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [refreshing, setRefreshing] = React.useState(false);
+  const completedCount = Object.keys(lessonsProgress).length;
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -39,14 +43,35 @@ export default function DashboardScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const xpInLevel = (user?.xp ?? 0) % XP_PER_LEVEL;
-  const level = Math.floor((user?.xp ?? 0) / XP_PER_LEVEL) + 1;
+  const effectiveXP = totalXP || (user?.xp ?? 0);
+  const xpInLevel = effectiveXP % XP_PER_LEVEL;
+  const level = Math.floor(effectiveXP / XP_PER_LEVEL) + 1;
+  const effectiveStreak = currentStreak || (user?.streak ?? 0);
 
-  const ACHIEVEMENTS = [
-    { emoji: "🔗", title: "Blockchain Básico", desc: "Completaste el primer módulo", date: "Hace 3 días" },
-    { emoji: "⭐", title: "Primera Lección Stellar", desc: "Aprendiste sobre XLM", date: "Hace 5 días" },
-    { emoji: "🔥", title: "Racha de 7 días", desc: "¡7 días seguidos aprendiendo!", date: "Hoy" },
-  ];
+  // Find next available lesson
+  const nextLesson = (() => {
+    for (const moduleId of Object.keys(LESSONS)) {
+      for (const lesson of LESSONS[moduleId]) {
+        if (!lessonsProgress[lesson.id]?.completed && !lesson.locked) return lesson;
+      }
+    }
+    return null;
+  })();
+
+  const ACHIEVEMENTS = (() => {
+    const list: { emoji: string; title: string; desc: string; date: string }[] = [];
+    if (completedCount >= 1) list.push({ emoji: "🚀", title: "Primera Lección", desc: "¡Completaste tu primera lección!", date: "Desbloqueado" });
+    if (completedCount >= 3) list.push({ emoji: "🔗", title: "Blockchain Básico", desc: "3 lecciones completadas", date: "Desbloqueado" });
+    if (completedCount >= 5) list.push({ emoji: "⭐", title: "Maestro Blockchain", desc: "¡Módulo 1 completado!", date: "Desbloqueado" });
+    if (effectiveStreak >= 5) list.push({ emoji: "🔥", title: `Racha de ${effectiveStreak}`, desc: `¡${effectiveStreak} lecciones seguidas!`, date: "Activo" });
+    // Show locked achievements if few unlocked
+    if (list.length < 3) {
+      if (completedCount < 1) list.push({ emoji: "🔒", title: "Primera Lección", desc: "Completa tu primera lección", date: "Bloqueado" });
+      if (completedCount < 3) list.push({ emoji: "🔒", title: "Blockchain Básico", desc: "Completa 3 lecciones", date: "Bloqueado" });
+      if (completedCount < 5) list.push({ emoji: "🔒", title: "Maestro Blockchain", desc: "Completa 5 lecciones", date: "Bloqueado" });
+    }
+    return list.slice(0, 4);
+  })();
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -59,13 +84,18 @@ export default function DashboardScreen() {
           <View style={styles.headerLeft}>
             <Image source={require("../../assets/logo.png")} style={styles.headerLogo} resizeMode="contain" />
             <View>
-              <Text style={styles.greeting}>Buenos días,</Text>
+              <Text style={styles.greeting}>{(() => {
+                const h = new Date().getHours();
+                if (h < 12) return "Buenos días,";
+                if (h < 18) return "Buenas tardes,";
+                return "Buenas noches,";
+              })()}</Text>
               <Text style={styles.userName}>{user?.name?.split(" ")[0] ?? "Explorador"} 👋</Text>
             </View>
           </View>
           <View style={styles.streakBadge}>
             <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakNum}>{user?.streak ?? 7}</Text>
+            <Text style={styles.streakNum}>{effectiveStreak}</Text>
           </View>
         </View>
 
@@ -75,7 +105,9 @@ export default function DashboardScreen() {
           <View style={styles.chimaContent}>
             <Text style={styles.chimaName}>Chima dice:</Text>
             <Text style={styles.chimaMsg}>
-              ¡Excelente racha! Tienes {user?.streak ?? 7} días seguidos. ¡Hoy aprendemos sobre llaves públicas y privadas!
+              {effectiveStreak > 0
+                ? `¡Excelente racha! Tienes ${effectiveStreak} lecciones completadas. ${nextLesson ? `¡Hoy aprendemos sobre ${nextLesson.title}!` : "¡Completaste todo!"}`
+                : "¡Bienvenido a Tonalli! Comienza tu primera lección y empieza a ganar XLM."}
             </Text>
           </View>
         </View>
@@ -95,36 +127,38 @@ export default function DashboardScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Estadísticas</Text>
           <View style={styles.statsGrid}>
-            <StatCard emoji="⚡" label="XP Total" value={(user?.xp ?? 3400).toLocaleString()} color={COLORS.primary} />
-            <StatCard emoji="🔥" label="Racha" value={`${user?.streak ?? 7}d`} color="#FF4757" />
-            <StatCard emoji="📚" label="Lecciones" value={user?.lessonsCompleted ?? 4} color={COLORS.success} />
-            <StatCard emoji="💫" label="XLM" value={(user?.xlmBalance ?? 15.5).toFixed(1)} color={COLORS.accent} />
+            <StatCard emoji="⚡" label="XP Total" value={effectiveXP.toLocaleString()} color={COLORS.primary} />
+            <StatCard emoji="🔥" label="Racha" value={`${effectiveStreak}`} color="#FF4757" />
+            <StatCard emoji="📚" label="Lecciones" value={completedCount} color={COLORS.success} />
+            <StatCard emoji="💫" label="XLM" value={(user?.xlmBalance ?? 0).toFixed(1)} color={COLORS.accent} />
           </View>
         </View>
 
         {/* Daily Lesson CTA */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Lección del Día</Text>
-          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-            <TouchableOpacity
-              style={styles.dailyCard}
-              onPress={() => router.push("/lesson/l4")}
-              activeOpacity={0.85}
-            >
-              <View style={styles.dailyLeft}>
-                <Text style={styles.dailyEmoji}>🔑</Text>
-                <View>
-                  <Text style={styles.dailyBadge}>HOY · GRATIS</Text>
-                  <Text style={styles.dailyTitle}>Llaves Públicas y Privadas</Text>
-                  <Text style={styles.dailyMeta}>5 min · +100 XP · Módulo 1</Text>
+        {nextLesson && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Siguiente Lección</Text>
+            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+              <TouchableOpacity
+                style={styles.dailyCard}
+                onPress={() => router.push(`/lesson/${nextLesson.id}`)}
+                activeOpacity={0.85}
+              >
+                <View style={styles.dailyLeft}>
+                  <Text style={styles.dailyEmoji}>{nextLesson.emoji}</Text>
+                  <View>
+                    <Text style={styles.dailyBadge}>SIGUIENTE · +{nextLesson.xpReward} XP</Text>
+                    <Text style={styles.dailyTitle}>{nextLesson.title}</Text>
+                    <Text style={styles.dailyMeta}>{nextLesson.duration} · Módulo {nextLesson.moduleId.replace("m", "")}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.dailyArrow}>
-                <Text style={styles.arrowText}>▶</Text>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+                <View style={styles.dailyArrow}>
+                  <Text style={styles.arrowText}>▶</Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        )}
 
         {/* Recent Achievements */}
         <View style={styles.section}>
@@ -150,7 +184,11 @@ export default function DashboardScreen() {
           <Text style={{ fontSize: 36 }}>🐕</Text>
           <View style={{ flex: 1 }}>
             <Text style={styles.xolloTitle}>Xollo te recuerda:</Text>
-            <Text style={styles.xolloMsg}>¡No rompas tu racha! Vuelve mañana para mantener {(user?.streak ?? 7) + 1} días seguidos 🔥</Text>
+            <Text style={styles.xolloMsg}>
+              {completedCount === 0
+                ? "¡Comienza tu aventura! Tu primera lección te espera. ¡Gana XP y XLM! 🚀"
+                : `¡No pares! Llevas ${completedCount} lecciones. ¡Sigue aprendiendo para ganar más XLM! 🔥`}
+            </Text>
           </View>
         </View>
       </ScrollView>

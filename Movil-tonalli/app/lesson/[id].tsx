@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { COLORS } from "../../src/constants/colors";
 import { LESSONS } from "../../src/data/mockData";
+import { useProgressStore } from "../../src/store/progressStore";
 
 function getLessonById(id: string) {
   for (const moduleId in LESSONS) {
@@ -24,6 +25,10 @@ export default function LessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const lesson = getLessonById(id ?? "");
   const scrollRef = useRef<ScrollView>(null);
+  const { isLessonCompleted } = useProgressStore();
+
+  // Calculate reading progress based on content blocks
+  const totalBlocks = lesson?.content?.length ?? 1;
 
   if (!lesson) {
     return (
