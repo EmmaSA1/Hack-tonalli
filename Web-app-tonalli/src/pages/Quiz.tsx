@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, XCircle, Zap, Star } from 'lucide-react';
+import { X, CheckCircle, Zap, Star } from 'lucide-react';
 import { apiService } from '../services/api';
 import { CharacterReaction } from '../components/CharacterReaction';
 import { Confetti } from '../components/Confetti';
@@ -37,14 +37,14 @@ export function Quiz() {
   const { user, setUser } = useAuthStore();
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [lessonTitle, setLessonTitle] = useState('');
-  const [passingScore, setPassingScore] = useState(70);
+  const [_lessonTitle, setLessonTitle] = useState('');
+  const [_passingScore, setPassingScore] = useState(70);
   const [currentQ, setCurrentQ] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answerState, setAnswerState] = useState<AnswerState>('idle');
-  const [localScore, setLocalScore] = useState(0);
+  const [_localScore, setLocalScore] = useState(0);
   const [gameState, setGameState] = useState<GameState>('loading');
-  const [showExplanation, setShowExplanation] = useState(false);
+  const [_showExplanation, setShowExplanation] = useState(false);
   const [characterMood, setCharacterMood] = useState<'idle' | 'happy' | 'excited' | 'thinking' | 'wrong' | 'celebrate'>('thinking');
   const [characterMessage, setCharacterMessage] = useState('Estas listo? Demuestra lo que sabes!');
   const [showConfetti, setShowConfetti] = useState(false);

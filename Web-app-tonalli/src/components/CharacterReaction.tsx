@@ -37,7 +37,8 @@ const MOOD_CLASSES: Record<Mood, string> = {
   celebrate: 'char-celebrate',
 };
 
-const MOOD_VARIANTS: Record<Mood, object> = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const MOOD_VARIANTS: Record<Mood, any> = {
   idle: {
     y: [0, -8, 0],
     rotate: [0, 1, -1, 0],

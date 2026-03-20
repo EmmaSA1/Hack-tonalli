@@ -51,6 +51,7 @@ function normalizeUser(u: any) {
     xlmEarned: u.xlmEarned || 0,
     lessonsCompleted: u.lessonsCompleted || 0,
     nftCertificates: u.nftCertificates || [],
+    role: (u.role as 'admin' | 'user') || 'user',
   };
 }
 
@@ -104,6 +105,49 @@ export const apiService = {
   getCertificates: async () => {
     const res = await api.get('/progress/certificates');
     return res.data;
+  },
+
+  // ── Chapters ─────────────────────────────────────────────────────────────
+
+  /** User: get published chapters */
+  getChapters: async () => {
+    const res = await api.get('/chapters');
+    return res.data;
+  },
+
+  /** User/Admin: get single chapter */
+  getChapter: async (id: string) => {
+    const res = await api.get(`/chapters/${id}`);
+    return res.data;
+  },
+
+  /** Admin: get all chapters (including unpublished) */
+  adminGetChapters: async () => {
+    const res = await api.get('/chapters/admin/all');
+    return res.data;
+  },
+
+  /** Admin: create chapter */
+  adminCreateChapter: async (data: Partial<{ title: string; description: string; content: string; moduleTag: string; order: number; published: boolean; estimatedMinutes: number; xpReward: number }>) => {
+    const res = await api.post('/chapters', data);
+    return res.data;
+  },
+
+  /** Admin: update chapter */
+  adminUpdateChapter: async (id: string, data: Record<string, unknown>) => {
+    const res = await api.patch(`/chapters/${id}`, data);
+    return res.data;
+  },
+
+  /** Admin: toggle publish */
+  adminTogglePublish: async (id: string) => {
+    const res = await api.patch(`/chapters/${id}/publish`);
+    return res.data;
+  },
+
+  /** Admin: delete chapter */
+  adminDeleteChapter: async (id: string) => {
+    await api.delete(`/chapters/${id}`);
   },
 };
 

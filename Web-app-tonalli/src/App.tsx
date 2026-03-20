@@ -9,6 +9,8 @@ import { Lesson } from './pages/Lesson';
 import { Quiz } from './pages/Quiz';
 import { Profile } from './pages/Profile';
 import { Leaderboard } from './pages/Leaderboard';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { ChaptersPage } from './pages/ChaptersPage';
 import { useAuthStore } from './stores/authStore';
 
 const queryClient = new QueryClient({
@@ -21,9 +23,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  const { isAuthenticated, user } = useAuthStore();
+  if (isAuthenticated) return <Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   return <>{children}</>;
 }
 
@@ -41,60 +50,47 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={
-            <AppLayout>
-              <Landing />
-            </AppLayout>
-          } />
+          {/* Public */}
+          <Route path="/" element={<AppLayout><Landing /></AppLayout>} />
+
           <Route path="/login" element={
-            <PublicRoute>
-              <AppLayout>
-                <Login />
-              </AppLayout>
-            </PublicRoute>
+            <PublicRoute><AppLayout><Login /></AppLayout></PublicRoute>
           } />
+
           <Route path="/register" element={
-            <PublicRoute>
-              <AppLayout>
-                <Register />
-              </AppLayout>
-            </PublicRoute>
+            <PublicRoute><AppLayout><Register /></AppLayout></PublicRoute>
           } />
+
+          {/* User routes */}
           <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            </ProtectedRoute>
+            <ProtectedRoute><AppLayout><Dashboard /></AppLayout></ProtectedRoute>
           } />
+
+          <Route path="/chapters" element={
+            <ProtectedRoute><AppLayout><ChaptersPage /></AppLayout></ProtectedRoute>
+          } />
+
           <Route path="/learn/:lessonId" element={
-            <ProtectedRoute>
-              <AppLayout showNavbar={false}>
-                <Lesson />
-              </AppLayout>
-            </ProtectedRoute>
+            <ProtectedRoute><AppLayout showNavbar={false}><Lesson /></AppLayout></ProtectedRoute>
           } />
+
           <Route path="/quiz/:lessonId" element={
-            <ProtectedRoute>
-              <AppLayout showNavbar={false}>
-                <Quiz />
-              </AppLayout>
-            </ProtectedRoute>
+            <ProtectedRoute><AppLayout showNavbar={false}><Quiz /></AppLayout></ProtectedRoute>
           } />
+
           <Route path="/profile" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Profile />
-              </AppLayout>
-            </ProtectedRoute>
+            <ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>
           } />
+
           <Route path="/leaderboard" element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Leaderboard />
-              </AppLayout>
-            </ProtectedRoute>
+            <ProtectedRoute><AppLayout><Leaderboard /></AppLayout></ProtectedRoute>
           } />
+
+          {/* Admin routes */}
+          <Route path="/admin" element={
+            <AdminRoute><AppLayout><AdminDashboard /></AppLayout></AdminRoute>
+          } />
+
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

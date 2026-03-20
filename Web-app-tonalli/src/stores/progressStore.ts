@@ -54,7 +54,7 @@ export const useProgressStore = create<ProgressState>()(
             data.lessons.sort((a: any, b: any) => a.order - b.order);
 
             let prevLessonCompleted = prevModuleCompleted;
-            const moduleLessons: Lesson[] = data.lessons.map((l: any, i: number) => {
+            const moduleLessons: Lesson[] = data.lessons.map((l: any, _i: number) => {
               const isCompleted = l.completed || completed.includes(l.id);
               const isAvailable = prevLessonCompleted && !isCompleted;
               const status = isCompleted ? 'completed' : isAvailable ? 'available' : 'locked';

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import { useProgressStore } from '../stores/progressStore';
-import { Zap, LogOut, Trophy } from 'lucide-react';
+import { Zap, LogOut, Trophy, LayoutDashboard, BookOpen, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function Navbar() {
@@ -21,79 +21,114 @@ export function Navbar() {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        padding: '12px 24px',
+        padding: '0 24px',
+        height: 56,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        borderBottom: '1px solid var(--border)',
       }}
-      initial={{ y: -60 }}
+      initial={{ y: -56 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
     >
       {/* Logo */}
-      <Link to={isAuthenticated ? '/dashboard' : '/'} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Link
+        to={isAuthenticated ? '/dashboard' : '/'}
+        style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 9 }}
+      >
         <img
           src="/logo.png"
           alt="Tonalli"
-          style={{ width: 42, height: 42, objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(46,139,63,0.5))' }}
+          style={{ width: 28, height: 28, objectFit: 'contain' }}
         />
-        <span style={{ fontSize: '1.4rem', fontWeight: 900, background: 'linear-gradient(135deg, #2E8B3F, #F5C518)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <span style={{
+          fontSize: '1.05rem',
+          fontWeight: 700,
+          fontFamily: "'Space Grotesk', sans-serif",
+          letterSpacing: '-0.02em',
+          color: 'var(--text)',
+        }}>
           Tonalli
         </span>
       </Link>
 
-      {/* Right side */}
+      {/* Right */}
       {isAuthenticated && user ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Streak */}
           {dailyStreak > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(200,39,26,0.15)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(200,39,26,0.35)' }}>
-              <span className="streak-fire" style={{ fontSize: '1.1rem' }}>🔥</span>
-              <span style={{ fontWeight: 800, color: '#C8271A', fontSize: '0.95rem' }}>{dailyStreak}</span>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'rgba(200,39,26,0.1)',
+              padding: '5px 10px', borderRadius: 6,
+              border: '1px solid rgba(200,39,26,0.2)',
+            }}>
+              <span className="streak-fire" style={{ fontSize: '0.95rem' }}>🔥</span>
+              <span style={{ fontWeight: 600, color: '#e05c52', fontSize: '0.85rem' }}>{dailyStreak}</span>
             </div>
           )}
 
           {/* XP */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(245,197,24,0.15)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(245,197,24,0.35)' }}>
-            <Zap size={14} color="#FFD700" />
-            <span style={{ fontWeight: 800, color: '#F5C518', fontSize: '0.95rem' }}>{user.xp.toLocaleString()} XP</span>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'rgba(201,146,10,0.1)',
+            padding: '5px 10px', borderRadius: 6,
+            border: '1px solid rgba(201,146,10,0.2)',
+          }}>
+            <Zap size={13} color="var(--accent-light)" />
+            <span style={{ fontWeight: 600, color: 'var(--accent-light)', fontSize: '0.85rem' }}>
+              {user.xp.toLocaleString()}
+            </span>
           </div>
 
           {/* Nav links */}
-          <Link to="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.9rem', fontWeight: 700 }}>
-            <Trophy size={16} />
-            <span style={{ display: 'none' }}>Ranking</span>
+          <Link to="/dashboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'color 0.15s' }} title="Dashboard">
+            <LayoutDashboard size={17} />
           </Link>
 
-          {/* Profile */}
-          <Link to="/profile" style={{ textDecoration: 'none' }}>
+          <Link to="/chapters" style={{ color: 'var(--text-muted)', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'color 0.15s' }} title="Capítulos">
+            <BookOpen size={17} />
+          </Link>
+
+          <Link to="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'color 0.15s' }} title="Ranking">
+            <Trophy size={17} />
+          </Link>
+
+          {user?.role === 'admin' && (
+            <Link to="/admin" style={{ color: 'var(--accent-light)', textDecoration: 'none', padding: '6px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', transition: 'color 0.15s' }} title="Panel Admin">
+              <Shield size={17} />
+            </Link>
+          )}
+
+          {/* Avatar */}
+          <Link to="/profile" style={{ textDecoration: 'none', marginLeft: 4 }}>
             <div style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #2E8B3F, #F5C518)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.85rem',
-              fontWeight: 900,
-              color: 'white',
-              border: '2px solid rgba(46,139,63,0.5)',
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.78rem', fontWeight: 700, color: '#fff',
+              border: '1.5px solid var(--border-active)',
+              cursor: 'pointer',
             }}>
               {user.username.charAt(0).toUpperCase()}
             </div>
           </Link>
 
           {/* Logout */}
-          <button onClick={handleLogout} className="btn btn-ghost btn-sm" style={{ padding: '6px 10px' }}>
-            <LogOut size={16} />
+          <button
+            onClick={handleLogout}
+            className="btn btn-ghost btn-sm"
+            style={{ padding: '6px 8px', marginLeft: 2 }}
+            title="Cerrar sesión"
+          >
+            <LogOut size={15} />
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Link to="/login" className="btn btn-secondary btn-sm">Entrar</Link>
-          <Link to="/register" className="btn btn-primary btn-sm">Empieza gratis</Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to="/login" className="btn btn-ghost btn-sm">Iniciar sesión</Link>
+          <Link to="/register" className="btn btn-primary btn-sm">Registrarse</Link>
         </div>
       )}
     </motion.nav>

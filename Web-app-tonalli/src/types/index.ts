@@ -8,9 +8,25 @@ export interface User {
   xlmEarned: number;
   lessonsCompleted: number;
   city: string;
+  role: 'admin' | 'user';
   walletAddress?: string;
   avatarUrl?: string;
   nftCertificates: NFTCertificate[];
+}
+
+export interface Chapter {
+  id: string;
+  title: string;
+  description?: string;
+  content?: string;
+  moduleTag?: string;
+  order: number;
+  published: boolean;
+  coverImage?: string;
+  estimatedMinutes?: number;
+  xpReward: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface NFTCertificate {

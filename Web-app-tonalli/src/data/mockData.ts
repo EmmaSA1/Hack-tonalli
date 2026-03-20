@@ -12,6 +12,7 @@ export const mockUser: User = {
   xlmEarned: 12.5,
   lessonsCompleted: 14,
   city: 'Ciudad de México',
+  role: 'user',
   walletAddress: 'GDEMO...XLM1',
   nftCertificates: [
     {

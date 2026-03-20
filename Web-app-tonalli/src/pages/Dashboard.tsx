@@ -176,7 +176,7 @@ export function Dashboard() {
           ...user,
           xp: profile.xp || 0,
           level: Math.floor((profile.totalXp || profile.xp || 0) / 500) + 1,
-          streak: profile.currentStreak || 0,
+          streak: (profile as any).currentStreak || profile.streak || 0,
           walletAddress: profile.walletAddress || '',
         });
       }
@@ -226,7 +226,7 @@ export function Dashboard() {
                 border: '3px solid var(--primary)',
               }}>
                 <img
-                  src={`/characters/${user.character || 'chima'}.png`}
+                  src={`/characters/${'chima'}.png`}
                   alt={user.username}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
