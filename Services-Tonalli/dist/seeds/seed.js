@@ -175,52 +175,157 @@ async function seed() {
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch1.id, type: 'lesson', order: 1, title: '¿Qué es Blockchain?',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: '¿Qué es una Blockchain?', text: 'Una blockchain (cadena de bloques) es una base de datos distribuida que registra transacciones de forma permanente y transparente. A diferencia de una base de datos tradicional controlada por una sola empresa (como un banco), la blockchain es mantenida simultáneamente por miles de computadoras alrededor del mundo llamadas "nodos".\n\nImagina un libro de contabilidad público donde todos pueden escribir, pero nadie puede borrar ni modificar lo que ya se escribió. Cada página nueva hace referencia a la anterior, creando una cadena imposible de romper.\n\nFuente: ethereum.org/es/learn — documentación oficial de Ethereum en español.', icon: '🔗' },
-                    { title: '¿Cómo funciona?', text: 'Los datos se organizan en "bloques". Cada bloque contiene:\n\n• Un conjunto de transacciones verificadas\n• Una marca de tiempo (timestamp) exacta\n• Un hash criptográfico del bloque anterior\n• Un hash propio (su "huella digital" única)\n\nUn hash es como una huella digital matemática: cualquier cambio en los datos produce un hash completamente diferente. Si alguien modifica un bloque antiguo, su hash cambia, rompiendo la cadena y alertando a toda la red.\n\nEste diseño hace que la blockchain sea prácticamente imposible de hackear: tendrías que modificar TODOS los bloques en MÁS del 50% de los nodos simultáneamente.', icon: '⛓️' },
-                    { title: 'Las 4 características fundamentales', text: '1. DESCENTRALIZADA: No hay un servidor central. Miles de nodos mantienen copias idénticas del registro. Si uno falla, los demás continúan.\n\n2. INMUTABLE: Una vez que una transacción se registra en un bloque y se confirma, no se puede modificar ni eliminar. Es permanente.\n\n3. TRANSPARENTE: Cualquier persona puede verificar cualquier transacción usando un explorador de bloques. Todo es público y auditable.\n\n4. SEGURA: La criptografía de clave pública-privada y los mecanismos de consenso protegen la red contra fraudes y ataques.', icon: '🔒' },
-                    { title: '¿Por qué importa en tu vida?', text: 'Blockchain no es solo Bitcoin. Esta tecnología permite:\n\n• Enviar dinero a tu familia en otro país en segundos y por centavos (vs días y comisiones altas con bancos)\n• Tener certificados académicos o profesionales que nadie puede falsificar\n• Ser dueño real de tus activos digitales sin intermediarios\n• Votar de forma transparente e incorruptible\n• Acceder a servicios financieros sin necesidad de cuenta bancaria\n\nEn Latinoamérica, donde 45% de la población no tiene cuenta bancaria (según el Banco Mundial), blockchain es una herramienta de inclusión financiera real.', icon: '💡' },
-                ], keyTerms: [
-                    { term: 'Blockchain', definition: 'Base de datos distribuida e inmutable organizada en bloques enlazados criptográficamente' },
-                    { term: 'Bloque', definition: 'Unidad de datos que contiene transacciones, un timestamp y el hash del bloque anterior' },
-                    { term: 'Hash', definition: 'Función matemática que genera una huella digital única e irreversible de cualquier dato' },
-                    { term: 'Nodo', definition: 'Computador que mantiene una copia completa de la blockchain y valida transacciones' },
-                    { term: 'Descentralización', definition: 'Distribución del control entre muchos participantes sin autoridad central' },
-                ] }),
+            content: `¿Qué es una Blockchain?
+
+Una blockchain (cadena de bloques) es una base de datos distribuida que registra transacciones de forma permanente y transparente. A diferencia de una base de datos tradicional controlada por una sola empresa (como un banco), la blockchain es mantenida simultáneamente por miles de computadoras alrededor del mundo llamadas "nodos".
+
+Imagina un libro de contabilidad público donde todos pueden escribir, pero nadie puede borrar ni modificar lo que ya se escribió. Cada página nueva hace referencia a la anterior, creando una cadena imposible de romper.
+
+Fuente: ethereum.org/es/learn
+
+¿Cómo funciona?
+
+Los datos se organizan en "bloques". Cada bloque contiene:
+• Un conjunto de transacciones verificadas
+• Una marca de tiempo (timestamp) exacta
+• Un hash criptográfico del bloque anterior
+• Un hash propio (su "huella digital" única)
+
+Un hash es como una huella digital matemática: cualquier cambio en los datos produce un hash completamente diferente. Si alguien modifica un bloque antiguo, su hash cambia, rompiendo la cadena y alertando a toda la red.
+
+Este diseño hace que la blockchain sea prácticamente imposible de hackear: tendrías que modificar TODOS los bloques en MÁS del 50% de los nodos simultáneamente.
+
+Las 4 características fundamentales
+
+1. DESCENTRALIZADA: No hay un servidor central. Miles de nodos mantienen copias idénticas del registro.
+2. INMUTABLE: Una vez registrada, una transacción no se puede modificar ni eliminar. Es permanente.
+3. TRANSPARENTE: Cualquier persona puede verificar cualquier transacción usando un explorador de bloques.
+4. SEGURA: La criptografía y los mecanismos de consenso protegen la red contra fraudes y ataques.
+
+¿Por qué importa en tu vida?
+
+Blockchain no es solo Bitcoin. Esta tecnología permite:
+• Enviar dinero a tu familia en otro país en segundos y por centavos
+• Tener certificados académicos que nadie puede falsificar
+• Ser dueño real de tus activos digitales sin intermediarios
+• Votar de forma transparente e incorruptible
+• Acceder a servicios financieros sin cuenta bancaria
+
+En Latinoamérica, donde 45% de la población no tiene cuenta bancaria (Banco Mundial), blockchain es una herramienta de inclusión financiera real.
+
+Términos clave:
+• Blockchain: Base de datos distribuida e inmutable organizada en bloques enlazados criptográficamente
+• Bloque: Unidad de datos que contiene transacciones, un timestamp y el hash del bloque anterior
+• Hash: Función matemática que genera una huella digital única e irreversible de cualquier dato
+• Nodo: Computador que mantiene una copia completa de la blockchain y valida transacciones
+• Descentralización: Distribución del control entre muchos participantes sin autoridad central`,
             videoUrl: '',
             questionsPool: JSON.stringify(bq1),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch1.id, type: 'lesson', order: 2, title: 'Conceptos avanzados de Blockchain',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Smart Contracts (Contratos Inteligentes)', text: 'Un smart contract es un programa almacenado en la blockchain que se ejecuta automáticamente cuando se cumplen condiciones predefinidas. Funciona como una máquina expendedora digital: metes dinero, seleccionas lo que quieres, y la máquina entrega el producto sin necesidad de un empleado.\n\nEjemplo real: Un seguro de vuelo basado en smart contract puede pagarte automáticamente si tu vuelo se retrasa más de 2 horas, sin que tengas que hacer ningún reclamo.\n\nEthereum popularizó los smart contracts en 2015. Stellar los incorporó con su plataforma Soroban (escrita en Rust) en 2024. Tonalli usa smart contracts para emitir tus certificados NFT automáticamente.\n\nFuente: developers.stellar.org — documentación oficial de Stellar.', icon: '📜' },
-                    { title: 'Mecanismos de consenso', text: '¿Cómo se ponen de acuerdo miles de nodos sobre qué transacciones son válidas? Usando mecanismos de consenso:\n\nPROOF OF WORK (PoW) — Bitcoin\nMineros compiten resolviendo puzzles matemáticos complejos. El primero en resolverlo gana el derecho de agregar el siguiente bloque. Consume mucha energía (comparable al consumo eléctrico de Argentina).\n\nPROOF OF STAKE (PoS) — Ethereum (desde 2022)\nValidadores "apuestan" sus monedas como garantía. Si validan mal, pierden su apuesta. Consume 99.95% menos energía que PoW.\n\nSTELLAR CONSENSUS PROTOCOL (SCP) — Stellar\nNodos votan entre sí para llegar a acuerdo en segundos. No requiere minería ni apuestas. Es el más eficiente y ecológico de los tres.\n\nFuente: stellar.org/learn', icon: '🤝' },
-                    { title: 'Tokens vs Criptomonedas', text: 'No son lo mismo:\n\nCRIPTOMONEDAS: Son nativas de su blockchain. Son como la moneda oficial de un país.\n• BTC es nativo de Bitcoin\n• ETH es nativo de Ethereum\n• XLM es nativo de Stellar\n\nTOKENS: Se crean sobre blockchains existentes. Son como fichas de casino: valen algo, pero funcionan dentro de un sistema ya existente.\n• USDC (dólar digital) corre sobre Ethereum y Stellar\n• Los NFTs son tokens únicos que representan propiedad digital\n• Los tokens ERC-20 de Ethereum, los activos Stellar\n\nTonalli te recompensa con XLM (criptomoneda nativa de Stellar) y emite NFTs (tokens) como certificados de tus logros.\n\nFuente: coinmarketcap.com/alexandria — enciclopedia cripto verificada.', icon: '🪙' },
-                ], keyTerms: [
-                    { term: 'Smart Contract', definition: 'Programa auto-ejecutable en la blockchain que se activa cuando se cumplen condiciones predefinidas' },
-                    { term: 'Proof of Work', definition: 'Mecanismo de consenso donde mineros resuelven puzzles matemáticos. Usado por Bitcoin.' },
-                    { term: 'Proof of Stake', definition: 'Mecanismo de consenso donde validadores apuestan sus monedas como garantía. Usado por Ethereum.' },
-                    { term: 'Token', definition: 'Activo digital creado sobre una blockchain existente, diferente a la criptomoneda nativa' },
-                    { term: 'Soroban', definition: 'Plataforma de smart contracts de Stellar, escrita en Rust' },
-                ] }),
+            content: `Smart Contracts (Contratos Inteligentes)
+
+Un smart contract es un programa almacenado en la blockchain que se ejecuta automáticamente cuando se cumplen condiciones predefinidas. Funciona como una máquina expendedora digital: metes dinero, seleccionas lo que quieres, y la máquina entrega el producto sin necesidad de un empleado.
+
+Ejemplo real: Un seguro de vuelo basado en smart contract puede pagarte automáticamente si tu vuelo se retrasa más de 2 horas, sin que tengas que hacer ningún reclamo.
+
+Ethereum popularizó los smart contracts en 2015. Stellar los incorporó con su plataforma Soroban (escrita en Rust) en 2024. Tonalli usa smart contracts para emitir tus certificados NFT automáticamente.
+
+Fuente: developers.stellar.org
+
+Mecanismos de consenso
+
+¿Cómo se ponen de acuerdo miles de nodos sobre qué transacciones son válidas? Usando mecanismos de consenso:
+
+PROOF OF WORK (PoW) — Bitcoin
+Mineros compiten resolviendo puzzles matemáticos complejos. El primero en resolverlo gana el derecho de agregar el siguiente bloque. Consume mucha energía.
+
+PROOF OF STAKE (PoS) — Ethereum (desde 2022)
+Validadores "apuestan" sus monedas como garantía. Si validan mal, pierden su apuesta. Consume 99.95% menos energía que PoW.
+
+STELLAR CONSENSUS PROTOCOL (SCP) — Stellar
+Nodos votan entre sí para llegar a acuerdo en segundos. No requiere minería ni apuestas. Es el más eficiente y ecológico.
+
+Fuente: stellar.org/learn
+
+Tokens vs Criptomonedas
+
+No son lo mismo:
+
+CRIPTOMONEDAS: Son nativas de su blockchain.
+• BTC es nativo de Bitcoin
+• ETH es nativo de Ethereum
+• XLM es nativo de Stellar
+
+TOKENS: Se crean sobre blockchains existentes.
+• USDC (dólar digital) corre sobre Ethereum y Stellar
+• Los NFTs son tokens únicos que representan propiedad digital
+• Los tokens ERC-20 de Ethereum, los activos Stellar
+
+Tonalli te recompensa con XLM (criptomoneda nativa) y emite NFTs (tokens) como certificados de tus logros.
+
+Términos clave:
+• Smart Contract: Programa auto-ejecutable en blockchain que se activa al cumplir condiciones
+• Proof of Work: Mecanismo de consenso con puzzles matemáticos (Bitcoin)
+• Proof of Stake: Mecanismo de consenso con apuestas de monedas (Ethereum)
+• Token: Activo digital creado sobre una blockchain existente
+• Soroban: Plataforma de smart contracts de Stellar, escrita en Rust`,
             videoUrl: '',
             questionsPool: JSON.stringify(bq2),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch1.id, type: 'lesson', order: 3, title: 'Blockchain en el mundo real',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Blockchain en Latinoamérica', text: 'América Latina lidera la adopción crypto en el mundo en desarrollo:\n\n• MÉXICO: Bitso (exchange más grande de LATAM) procesa más de $1 billón USD en remesas. La Ley Fintech de 2018 regula activos virtuales. Stellar tiene alianzas activas en el país.\n\n• ARGENTINA: Con inflación superior al 100% anual, millones usan stablecoins (USDC, DAI) para proteger sus ahorros. Mercado Libre acepta crypto.\n\n• EL SALVADOR: Primer país en adoptar Bitcoin como moneda legal en 2021.\n\n• BRASIL: Banco Central desarrolla el Real Digital (DREX) sobre tecnología blockchain.\n\nSegún Chainalysis, LATAM representa el 7.3% de las transacciones crypto globales, con crecimiento anual del 40%.', icon: '🇲🇽' },
-                    { title: 'Wallets y activos digitales', text: 'Una wallet (billetera digital) es el software que te permite interactuar con la blockchain:\n\nCLAVE PÚBLICA (tu dirección): Como tu número de cuenta bancaria. La compartes para recibir pagos. En Stellar empieza con "G...".\n\nCLAVE PRIVADA (tu secreto): Como la contraseña de tu banco, pero MÁS importante. Si alguien la tiene, controla todos tus fondos. NUNCA la compartas. En Stellar empieza con "S...".\n\nSEED PHRASE (frase semilla): 12-24 palabras que son el respaldo maestro de tu wallet. Guárdala en papel, NUNCA en tu celular o computadora.\n\nRegla de oro: "Not your keys, not your coins" — si no controlas tus claves, no controlas tu dinero.', icon: '👛' },
-                    { title: 'El futuro: Web3 y más allá', text: 'Web3 es la evolución del internet:\n\nWEB1 (1990s): Solo leer. Páginas estáticas.\nWEB2 (2000s): Leer y escribir. Redes sociales, pero las empresas son dueñas de tus datos.\nWEB3 (ahora): Leer, escribir y POSEER. Tú eres dueño de tus datos, identidad y activos digitales.\n\nAplicaciones de Web3:\n• DeFi (Finanzas Descentralizadas): Préstamos, ahorros y seguros sin bancos\n• NFTs: Propiedad verificable de arte, música, certificados y más\n• DAOs: Organizaciones gobernadas por votación en blockchain\n• Identidad descentralizada: Control total sobre tu identidad digital\n\nTonalli te prepara para este futuro certificando tus conocimientos con NFTs reales en Stellar.', icon: '🌐' },
-                ], keyTerms: [
-                    { term: 'Wallet', definition: 'Software que almacena claves criptográficas para interactuar con la blockchain' },
-                    { term: 'NFT', definition: 'Non-Fungible Token — token único e irrepetible que prueba propiedad digital' },
-                    { term: 'DeFi', definition: 'Finanzas Descentralizadas — servicios financieros sin intermediarios, usando smart contracts' },
-                    { term: 'Stablecoin', definition: 'Criptomoneda con valor estable, generalmente vinculada al dólar (ej. USDC, USDT)' },
-                    { term: 'Web3', definition: 'La evolución del internet donde los usuarios poseen sus datos y activos digitales' },
-                ] }),
+            content: `Blockchain en Latinoamérica
+
+América Latina lidera la adopción crypto en el mundo en desarrollo:
+
+• MÉXICO: Bitso (exchange más grande de LATAM) procesa más de $1 billón USD en remesas. La Ley Fintech de 2018 regula activos virtuales. Stellar tiene alianzas activas en el país.
+
+• ARGENTINA: Con inflación superior al 100% anual, millones usan stablecoins (USDC, DAI) para proteger sus ahorros. Mercado Libre acepta crypto.
+
+• EL SALVADOR: Primer país en adoptar Bitcoin como moneda legal en 2021.
+
+• BRASIL: Banco Central desarrolla el Real Digital (DREX) sobre tecnología blockchain.
+
+Según Chainalysis, LATAM representa el 7.3% de las transacciones crypto globales, con crecimiento anual del 40%.
+
+Wallets y activos digitales
+
+Una wallet (billetera digital) es el software que te permite interactuar con la blockchain:
+
+CLAVE PÚBLICA (tu dirección): Como tu número de cuenta bancaria. La compartes para recibir pagos. En Stellar empieza con "G...".
+
+CLAVE PRIVADA (tu secreto): Como la contraseña de tu banco, pero MÁS importante. Si alguien la tiene, controla todos tus fondos. NUNCA la compartas. En Stellar empieza con "S...".
+
+SEED PHRASE (frase semilla): 12-24 palabras que son el respaldo maestro de tu wallet. Guárdala en papel, NUNCA en tu celular o computadora.
+
+Regla de oro: "Not your keys, not your coins" — si no controlas tus claves, no controlas tu dinero.
+
+El futuro: Web3 y más allá
+
+Web3 es la evolución del internet:
+
+WEB1 (1990s): Solo leer. Páginas estáticas.
+WEB2 (2000s): Leer y escribir. Redes sociales, pero las empresas son dueñas de tus datos.
+WEB3 (ahora): Leer, escribir y POSEER. Tú eres dueño de tus datos, identidad y activos digitales.
+
+Aplicaciones de Web3:
+• DeFi (Finanzas Descentralizadas): Préstamos, ahorros y seguros sin bancos
+• NFTs: Propiedad verificable de arte, música, certificados y más
+• DAOs: Organizaciones gobernadas por votación en blockchain
+• Identidad descentralizada: Control total sobre tu identidad digital
+
+Tonalli te prepara para este futuro certificando tus conocimientos con NFTs reales en Stellar.
+
+Términos clave:
+• Wallet: Software que almacena claves criptográficas para interactuar con la blockchain
+• NFT: Non-Fungible Token — token único e irrepetible que prueba propiedad digital
+• DeFi: Finanzas Descentralizadas — servicios financieros sin intermediarios, usando smart contracts
+• Stablecoin: Criptomoneda con valor estable, generalmente vinculada al dólar (ej. USDC, USDT)
+• Web3: La evolución del internet donde los usuarios poseen sus datos y activos digitales`,
             videoUrl: '',
             questionsPool: JSON.stringify(bq3),
         }));
@@ -239,45 +344,171 @@ async function seed() {
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch2.id, type: 'lesson', order: 1, title: '¿Qué es Stellar?',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: '¿Qué es Stellar?', text: 'Stellar es una red blockchain de código abierto fundada en 2014 por Jed McCaleb (cofundador de Ripple) y Joyce Kim. Su misión es facilitar pagos internacionales rápidos, baratos y accesibles para todos.\n\nSu criptomoneda nativa se llama XLM (Lumen). Un Lumen es la unidad básica de la red y se usa para pagar comisiones de transacción y prevenir spam en la red.\n\nA diferencia de Bitcoin (diseñado como "oro digital") o Ethereum (diseñado para smart contracts), Stellar fue diseñada específicamente para PAGOS y REMESAS entre fronteras.\n\nFuente: stellar.org/learn — documentación oficial de la Stellar Development Foundation.', icon: '⭐' },
-                    { title: 'Velocidad, costo y eficiencia', text: 'Comparativa de transacciones:\n\n• BITCOIN: 10-60 minutos, comisión $1-50 USD\n• ETHEREUM: 15 segundos-5 minutos, comisión $0.50-50 USD\n• STELLAR: 3-5 SEGUNDOS, comisión $0.0000001 USD\n• TRANSFERENCIA BANCARIA INTERNACIONAL: 3-5 DÍAS, comisión $25-50 USD\n\nStellar puede procesar hasta 1,000 transacciones por segundo. Con Soroban (smart contracts), esta capacidad se expande aún más.\n\nPara enviar $200 USD a tu familia en otro país, un banco cobra ~$25 de comisión. Con Stellar, cuesta menos de un centavo y llega en 5 segundos.', icon: '⚡' },
-                    { title: 'Stellar Consensus Protocol (SCP)', text: 'Stellar NO usa minería (a diferencia de Bitcoin). Usa el SCP, un protocolo inventado por el Dr. David Mazières de Stanford.\n\n¿Cómo funciona?\n1. Cada nodo tiene una lista de nodos en los que confía (quorum slice)\n2. Los nodos votan sobre qué transacciones son válidas\n3. Cuando suficientes nodos están de acuerdo, se alcanza consenso\n4. El bloque se confirma en 3-5 segundos\n\nVentajas del SCP:\n• No consume energía como PoW (ecológico)\n• No requiere apostar monedas como PoS\n• Resistente a fallas parciales de la red\n• Nodos nuevos se pueden unir libremente\n\nFuente: developers.stellar.org/docs/learn/fundamentals/stellar-consensus-protocol', icon: '🤝' },
-                ], keyTerms: [
-                    { term: 'XLM (Lumen)', definition: 'Criptomoneda nativa de Stellar, usada para comisiones y operaciones en la red' },
-                    { term: 'SCP', definition: 'Stellar Consensus Protocol — mecanismo de votación entre nodos sin minería' },
-                    { term: 'Quorum Slice', definition: 'Conjunto de nodos en los que un nodo confía para alcanzar consenso' },
-                ] }),
+            content: `¿Qué es Stellar?
+
+Stellar es una red blockchain de código abierto fundada en 2014 por Jed McCaleb (cofundador de Ripple) y Joyce Kim. Su misión es facilitar pagos internacionales rápidos, baratos y accesibles para todos.
+
+Su criptomoneda nativa se llama XLM (Lumen). Un Lumen es la unidad básica de la red y se usa para pagar comisiones de transacción y prevenir spam en la red.
+
+A diferencia de Bitcoin (diseñado como "oro digital") o Ethereum (diseñado para smart contracts), Stellar fue diseñada específicamente para PAGOS y REMESAS entre fronteras.
+
+Fuente: stellar.org/learn — documentación oficial de la Stellar Development Foundation.
+
+Velocidad, costo y eficiencia
+
+Comparativa de transacciones:
+
+• BITCOIN: 10-60 minutos, comisión $1-50 USD
+• ETHEREUM: 15 segundos-5 minutos, comisión $0.50-50 USD
+• STELLAR: 3-5 SEGUNDOS, comisión $0.0000001 USD
+• TRANSFERENCIA BANCARIA INTERNACIONAL: 3-5 DÍAS, comisión $25-50 USD
+
+Stellar puede procesar hasta 1,000 transacciones por segundo. Con Soroban (smart contracts), esta capacidad se expande aún más.
+
+Para enviar $200 USD a tu familia en otro país, un banco cobra ~$25 de comisión. Con Stellar, cuesta menos de un centavo y llega en 5 segundos.
+
+Stellar Consensus Protocol (SCP)
+
+Stellar NO usa minería (a diferencia de Bitcoin). Usa el SCP, un protocolo inventado por el Dr. David Mazières de Stanford.
+
+¿Cómo funciona?
+1. Cada nodo tiene una lista de nodos en los que confía (quorum slice)
+2. Los nodos votan sobre qué transacciones son válidas
+3. Cuando suficientes nodos están de acuerdo, se alcanza consenso
+4. El bloque se confirma en 3-5 segundos
+
+Ventajas del SCP:
+• No consume energía como PoW (ecológico)
+• No requiere apostar monedas como PoS
+• Resistente a fallas parciales de la red
+• Nodos nuevos se pueden unir libremente
+
+Fuente: developers.stellar.org/docs/learn/fundamentals/stellar-consensus-protocol
+
+Términos clave:
+• XLM (Lumen): Criptomoneda nativa de Stellar, usada para comisiones y operaciones en la red
+• SCP: Stellar Consensus Protocol — mecanismo de votación entre nodos sin minería
+• Quorum Slice: Conjunto de nodos en los que un nodo confía para alcanzar consenso`,
             videoUrl: '', questionsPool: JSON.stringify(sq1),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch2.id, type: 'lesson', order: 2, title: 'El ecosistema Stellar',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Anchors: el puente con el mundo real', text: 'Un anchor (ancla) es una entidad de confianza que conecta activos del mundo real con la red Stellar.\n\nEjemplo: Si un banco en México emite "pesos digitales" en Stellar, ese banco es un anchor. Los pesos digitales están respaldados 1:1 por pesos reales en el banco.\n\nAnchors populares:\n• Circle — emite USDC (dólar digital) en Stellar\n• Anclap — emite ARS (peso argentino digital) en Stellar\n• ClickPesa — servicios financieros en África sobre Stellar\n\nEsto permite que envíes dólares digitales desde EE.UU. y tu familia en México reciba pesos mexicanos reales, todo en segundos y por centavos.\n\nFuente: stellar.org/learn/anchor-basics', icon: '⚓' },
-                    { title: 'Horizon API y herramientas para desarrolladores', text: 'Horizon es la API HTTP de Stellar — la puerta de entrada para que las aplicaciones interactúen con la red.\n\nURL de testnet: https://horizon-testnet.stellar.org\nURL de mainnet: https://horizon.stellar.org\n\nCon Horizon puedes:\n• Consultar saldos de cualquier cuenta\n• Enviar pagos y crear transacciones\n• Buscar historial de operaciones\n• Monitorear la red en tiempo real\n\nSDKs disponibles: JavaScript, Python, Go, Java, .NET\n\nTonalli usa Horizon para crear tu wallet, fondearte con XLM y emitir tus certificados NFT. Toda la tecnología detrás de tus recompensas funciona a través de esta API.\n\nFuente: developers.stellar.org/docs/data/horizon', icon: '🔌' },
-                    { title: 'Stellar Development Foundation (SDF)', text: 'La SDF es la organización sin fines de lucro que desarrolla y promueve Stellar. Fue fundada en 2014 con la misión de crear acceso financiero equitativo.\n\nLa SDF:\n• Desarrolla el software core de Stellar (stellar-core, Horizon, Soroban)\n• Otorga grants a proyectos que construyen sobre Stellar\n• Organiza eventos como Meridian (conferencia anual)\n• Mantiene el Friendbot para testnet\n• Promueve la adopción en mercados emergentes\n\nDatos clave:\n• +8 millones de cuentas activas en Stellar\n• +2 mil millones de operaciones procesadas\n• Presente en más de 30 países\n\nTonalli participa en el ecosistema Stellar a través del Hackathon Código Alebrije de la SDF.', icon: '🏛️' },
-                ], keyTerms: [
-                    { term: 'Anchor', definition: 'Entidad que emite activos respaldados por valor real en la red Stellar' },
-                    { term: 'Horizon', definition: 'API HTTP de Stellar para interactuar con la red desde aplicaciones' },
-                    { term: 'SDF', definition: 'Stellar Development Foundation — organización sin fines de lucro detrás de Stellar' },
-                    { term: 'USDC', definition: 'USD Coin — stablecoin del dólar emitido por Circle, disponible en Stellar' },
-                ] }),
+            content: `Anchors: el puente con el mundo real
+
+Un anchor (ancla) es una entidad de confianza que conecta activos del mundo real con la red Stellar.
+
+Ejemplo: Si un banco en México emite "pesos digitales" en Stellar, ese banco es un anchor. Los pesos digitales están respaldados 1:1 por pesos reales en el banco.
+
+Anchors populares:
+• Circle — emite USDC (dólar digital) en Stellar
+• Anclap — emite ARS (peso argentino digital) en Stellar
+• ClickPesa — servicios financieros en África sobre Stellar
+
+Esto permite que envíes dólares digitales desde EE.UU. y tu familia en México reciba pesos mexicanos reales, todo en segundos y por centavos.
+
+Fuente: stellar.org/learn/anchor-basics
+
+Horizon API y herramientas para desarrolladores
+
+Horizon es la API HTTP de Stellar — la puerta de entrada para que las aplicaciones interactúen con la red.
+
+URL de testnet: https://horizon-testnet.stellar.org
+URL de mainnet: https://horizon.stellar.org
+
+Con Horizon puedes:
+• Consultar saldos de cualquier cuenta
+• Enviar pagos y crear transacciones
+• Buscar historial de operaciones
+• Monitorear la red en tiempo real
+
+SDKs disponibles: JavaScript, Python, Go, Java, .NET
+
+Tonalli usa Horizon para crear tu wallet, fondearte con XLM y emitir tus certificados NFT. Toda la tecnología detrás de tus recompensas funciona a través de esta API.
+
+Fuente: developers.stellar.org/docs/data/horizon
+
+Stellar Development Foundation (SDF)
+
+La SDF es la organización sin fines de lucro que desarrolla y promueve Stellar. Fue fundada en 2014 con la misión de crear acceso financiero equitativo.
+
+La SDF:
+• Desarrolla el software core de Stellar (stellar-core, Horizon, Soroban)
+• Otorga grants a proyectos que construyen sobre Stellar
+• Organiza eventos como Meridian (conferencia anual)
+• Mantiene el Friendbot para testnet
+• Promueve la adopción en mercados emergentes
+
+Datos clave:
+• +8 millones de cuentas activas en Stellar
+• +2 mil millones de operaciones procesadas
+• Presente en más de 30 países
+
+Tonalli participa en el ecosistema Stellar a través del Hackathon Código Alebrije de la SDF.
+
+Términos clave:
+• Anchor: Entidad que emite activos respaldados por valor real en la red Stellar
+• Horizon: API HTTP de Stellar para interactuar con la red desde aplicaciones
+• SDF: Stellar Development Foundation — organización sin fines de lucro detrás de Stellar
+• USDC: USD Coin — stablecoin del dólar emitido por Circle, disponible en Stellar`,
             videoUrl: '', questionsPool: JSON.stringify(sq2),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch2.id, type: 'lesson', order: 3, title: 'Soroban, Keypairs y el futuro',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Soroban: Smart Contracts en Stellar', text: 'Soroban es la plataforma de smart contracts de Stellar, lanzada oficialmente en 2024. Está escrita en Rust, uno de los lenguajes más seguros.\n\n¿Por qué Soroban es especial?\n• Costos predecibles: sabes cuánto costará tu transacción ANTES de ejecutarla\n• Modelo de almacenamiento eficiente: los datos tienen "fecha de expiración"\n• Seguridad de Rust: previene errores comunes como buffer overflows\n• Compatible con el ecosistema Stellar existente\n\nCasos de uso de Soroban:\n• DeFi: préstamos, exchanges descentralizados\n• NFTs: certificados, arte digital, coleccionables\n• DAOs: gobernanza descentralizada\n• Identidad: verificación sin intermediarios\n\nTonalli usa Soroban para crear los certificados NFT que recibes al completar capítulos.\n\nFuente: soroban.stellar.org', icon: '🚀' },
-                    { title: 'Keypairs, cuentas y Friendbot', text: 'Para usar Stellar necesitas un KEYPAIR (par de claves):\n\nCLAVE PÚBLICA (empieza con G): Tu dirección en Stellar. Es como tu correo electrónico — la compartes para que te envíen XLM.\nEjemplo: GCDWF5QNGDW5MQ5OBNWPC3LB5ODVYL73...\n\nCLAVE PRIVADA (empieza con S): Tu contraseña maestra. NUNCA la compartas. Quien la tenga controla tus fondos.\nEjemplo: SCZANGBA5YHTNYVVV2C3CQKQX...\n\nPara activar una cuenta Stellar necesitas un BALANCE MÍNIMO de 1 XLM (la "reserva base"). Cada sub-entrada (trustlines, ofertas, datos) requiere 0.5 XLM adicional.\n\nFRIENDBOT: En testnet, puedes fondear cualquier cuenta gratis con https://friendbot.stellar.org?addr=TU_CLAVE_PUBLICA. Tonalli usa Friendbot para fondear tu wallet automáticamente al registrarte.', icon: '🔑' },
-                    { title: 'Empresas que usan Stellar', text: 'Stellar no es solo teoría. Empresas reales mueven millones de dólares sobre la red:\n\n• MONEYGRAM: Alianza con Stellar para remesas internacionales usando USDC. Presente en 200 países.\n• CIRCLE: Emite USDC (dólar digital) en Stellar. +$25 mil millones en circulación.\n• BITSO: Exchange mexicano que usa Stellar para pagos transfronterizos.\n• FLUTTERWAVE: Pagos en África sobre Stellar.\n• FRANKLIN TEMPLETON: Fondo de inversión de $1.4 trillones que tokenizó un fondo del mercado monetario en Stellar.\n\nStellar Expert (stellar.expert) es el explorador de bloques donde puedes verificar cualquier transacción en la red.\n\nFuente: stellar.org/case-studies', icon: '🏦' },
-                ], keyTerms: [
-                    { term: 'Soroban', definition: 'Plataforma de smart contracts de Stellar, escrita en Rust' },
-                    { term: 'Keypair', definition: 'Par de clave pública (dirección) y clave privada (secreto) en Stellar' },
-                    { term: 'Friendbot', definition: 'Servicio gratuito que fondea cuentas en el testnet de Stellar con 10,000 XLM de prueba' },
-                    { term: 'Reserva base', definition: 'Balance mínimo de 1 XLM necesario para mantener activa una cuenta Stellar' },
-                ] }),
+            content: `Soroban: Smart Contracts en Stellar
+
+Soroban es la plataforma de smart contracts de Stellar, lanzada oficialmente en 2024. Está escrita en Rust, uno de los lenguajes más seguros.
+
+¿Por qué Soroban es especial?
+• Costos predecibles: sabes cuánto costará tu transacción ANTES de ejecutarla
+• Modelo de almacenamiento eficiente: los datos tienen "fecha de expiración"
+• Seguridad de Rust: previene errores comunes como buffer overflows
+• Compatible con el ecosistema Stellar existente
+
+Casos de uso de Soroban:
+• DeFi: préstamos, exchanges descentralizados
+• NFTs: certificados, arte digital, coleccionables
+• DAOs: gobernanza descentralizada
+• Identidad: verificación sin intermediarios
+
+Tonalli usa Soroban para crear los certificados NFT que recibes al completar capítulos.
+
+Fuente: soroban.stellar.org
+
+Keypairs, cuentas y Friendbot
+
+Para usar Stellar necesitas un KEYPAIR (par de claves):
+
+CLAVE PÚBLICA (empieza con G): Tu dirección en Stellar. Es como tu correo electrónico — la compartes para que te envíen XLM.
+Ejemplo: GCDWF5QNGDW5MQ5OBNWPC3LB5ODVYL73...
+
+CLAVE PRIVADA (empieza con S): Tu contraseña maestra. NUNCA la compartas. Quien la tenga controla tus fondos.
+Ejemplo: SCZANGBA5YHTNYVVV2C3CQKQX...
+
+Para activar una cuenta Stellar necesitas un BALANCE MÍNIMO de 1 XLM (la "reserva base"). Cada sub-entrada (trustlines, ofertas, datos) requiere 0.5 XLM adicional.
+
+FRIENDBOT: En testnet, puedes fondear cualquier cuenta gratis con https://friendbot.stellar.org?addr=TU_CLAVE_PUBLICA. Tonalli usa Friendbot para fondear tu wallet automáticamente al registrarte.
+
+Empresas que usan Stellar
+
+Stellar no es solo teoría. Empresas reales mueven millones de dólares sobre la red:
+
+• MONEYGRAM: Alianza con Stellar para remesas internacionales usando USDC. Presente en 200 países.
+• CIRCLE: Emite USDC (dólar digital) en Stellar. +$25 mil millones en circulación.
+• BITSO: Exchange mexicano que usa Stellar para pagos transfronterizos.
+• FLUTTERWAVE: Pagos en África sobre Stellar.
+• FRANKLIN TEMPLETON: Fondo de inversión de $1.4 trillones que tokenizó un fondo del mercado monetario en Stellar.
+
+Stellar Expert (stellar.expert) es el explorador de bloques donde puedes verificar cualquier transacción en la red.
+
+Fuente: stellar.org/case-studies
+
+Términos clave:
+• Soroban: Plataforma de smart contracts de Stellar, escrita en Rust
+• Keypair: Par de clave pública (dirección) y clave privada (secreto) en Stellar
+• Friendbot: Servicio gratuito que fondea cuentas en el testnet de Stellar con 10,000 XLM de prueba
+• Reserva base: Balance mínimo de 1 XLM necesario para mantener activa una cuenta Stellar`,
             videoUrl: '', questionsPool: JSON.stringify(sq3),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
@@ -294,48 +525,195 @@ async function seed() {
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch3.id, type: 'lesson', order: 1, title: 'Tu primera wallet',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Tu wallet ya existe', text: 'Cuando te registraste en Tonalli, creamos automáticamente una wallet Stellar para ti. No necesitaste descargar nada extra ni saber de criptomonedas.\n\n¿Qué pasó cuando te registraste?\n1. Generamos un KEYPAIR (par de claves) único para ti\n2. Fondeamos tu cuenta con XLM de testnet usando Friendbot\n3. Tu wallet quedó lista para recibir recompensas y certificados NFT\n\nPuedes ver tu dirección de wallet en tu perfil de Tonalli. Cada vez que completes un capítulo, recibirás XLM directamente en esta wallet.\n\nEn el futuro, cuando Tonalli migre a mainnet, tus recompensas serán XLM con valor real que podrás intercambiar o enviar a otros.', icon: '👛' },
-                    { title: 'Clave pública vs clave privada', text: 'Tu wallet tiene dos partes esenciales:\n\nCLAVE PUBLICA (empieza con G...):\n• Es tu "dirección" en la blockchain\n• La puedes compartir libremente\n• Cualquiera puede usarla para ENVIARTE fondos\n• Es como el número de tu cuenta bancaria\n\nCLAVE PRIVADA (empieza con S...):\n• Es tu "contraseña maestra"\n• NUNCA JAMAS la compartas con nadie\n• Quien la tenga controla TODOS tus fondos\n• Es como la contraseña de tu banca en línea + tu token + tu huella dactilar, TODO JUNTO\n\nRegla de oro en crypto: "Not your keys, not your coins" — Si no controlas tu clave privada, no eres realmente dueño de tu dinero.', icon: '🔑' },
-                    { title: 'Seed phrase (frase semilla)', text: 'La seed phrase (frase semilla) es un respaldo maestro de tu wallet compuesto por 12 o 24 palabras en inglés, generadas aleatoriamente.\n\nEjemplo: "apple banana cherry dog elephant fish guitar house ice jam kite lemon"\n\nSi pierdes acceso a tu dispositivo, puedes recuperar tu wallet COMPLETA usando estas palabras.\n\nREGLAS PARA TU SEED PHRASE:\n• Escríbela en PAPEL, nunca en tu celular o computadora\n• Guárdala en un lugar seguro (caja fuerte, etc.)\n• Nunca la fotografíes ni la envíes por WhatsApp\n• Nadie legítimo te la pedirá jamás\n• Si alguien te la pide, es una ESTAFA\n\nTonalli guarda tu clave privada de forma segura, pero en wallets personales, la seed phrase es tu responsabilidad total.\n\nFuente: bitcoin.org/es — documentación oficial sobre seguridad de wallets.', icon: '📝' },
-                ], keyTerms: [
-                    { term: 'Clave pública', definition: 'Tu dirección en la blockchain. Se comparte para recibir fondos. Empieza con G en Stellar.' },
-                    { term: 'Clave privada', definition: 'Tu secreto para autorizar transacciones. NUNCA se comparte. Empieza con S en Stellar.' },
-                    { term: 'Seed phrase', definition: '12-24 palabras que son el respaldo maestro de tu wallet. Permite recuperar acceso total.' },
-                    { term: 'Keypair', definition: 'Par de clave pública y privada que forma tu identidad en la blockchain' },
-                ] }),
+            content: `Tu wallet ya existe
+
+Cuando te registraste en Tonalli, creamos automáticamente una wallet Stellar para ti. No necesitaste descargar nada extra ni saber de criptomonedas.
+
+¿Qué pasó cuando te registraste?
+1. Generamos un KEYPAIR (par de claves) único para ti
+2. Fondeamos tu cuenta con XLM de testnet usando Friendbot
+3. Tu wallet quedó lista para recibir recompensas y certificados NFT
+
+Puedes ver tu dirección de wallet en tu perfil de Tonalli. Cada vez que completes un capítulo, recibirás XLM directamente en esta wallet.
+
+En el futuro, cuando Tonalli migre a mainnet, tus recompensas serán XLM con valor real que podrás intercambiar o enviar a otros.
+
+Clave pública vs clave privada
+
+Tu wallet tiene dos partes esenciales:
+
+CLAVE PUBLICA (empieza con G...):
+• Es tu "dirección" en la blockchain
+• La puedes compartir libremente
+• Cualquiera puede usarla para ENVIARTE fondos
+• Es como el número de tu cuenta bancaria
+
+CLAVE PRIVADA (empieza con S...):
+• Es tu "contraseña maestra"
+• NUNCA JAMAS la compartas con nadie
+• Quien la tenga controla TODOS tus fondos
+• Es como la contraseña de tu banca en línea + tu token + tu huella dactilar, TODO JUNTO
+
+Regla de oro en crypto: "Not your keys, not your coins" — Si no controlas tu clave privada, no eres realmente dueño de tu dinero.
+
+Seed phrase (frase semilla)
+
+La seed phrase (frase semilla) es un respaldo maestro de tu wallet compuesto por 12 o 24 palabras en inglés, generadas aleatoriamente.
+
+Ejemplo: "apple banana cherry dog elephant fish guitar house ice jam kite lemon"
+
+Si pierdes acceso a tu dispositivo, puedes recuperar tu wallet COMPLETA usando estas palabras.
+
+REGLAS PARA TU SEED PHRASE:
+• Escríbela en PAPEL, nunca en tu celular o computadora
+• Guárdala en un lugar seguro (caja fuerte, etc.)
+• Nunca la fotografíes ni la envíes por WhatsApp
+• Nadie legítimo te la pedirá jamás
+• Si alguien te la pide, es una ESTAFA
+
+Tonalli guarda tu clave privada de forma segura, pero en wallets personales, la seed phrase es tu responsabilidad total.
+
+Fuente: bitcoin.org/es — documentación oficial sobre seguridad de wallets.
+
+Términos clave:
+• Clave pública: Tu dirección en la blockchain. Se comparte para recibir fondos. Empieza con G en Stellar.
+• Clave privada: Tu secreto para autorizar transacciones. NUNCA se comparte. Empieza con S en Stellar.
+• Seed phrase: 12-24 palabras que son el respaldo maestro de tu wallet. Permite recuperar acceso total.
+• Keypair: Par de clave pública y privada que forma tu identidad en la blockchain`,
             videoUrl: '', questionsPool: JSON.stringify(wq1),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch3.id, type: 'lesson', order: 2, title: 'Tipos de wallets',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Wallets Custodial vs Non-Custodial', text: 'CUSTODIAL (Un tercero guarda tus claves):\n• Ejemplos: Binance, Bitso, Coinbase\n• Ventaja: Si pierdes tu contraseña, puedes recuperarla\n• Desventaja: El exchange puede congelarte la cuenta, ser hackeado, o cerrar\n• Es como tener tu dinero en un banco: ellos lo "cuidan"\n\nNON-CUSTODIAL (Tú controlas tus claves):\n• Ejemplos: MetaMask, Freighter (Stellar), Ledger\n• Ventaja: Control total, nadie puede censurarte ni congelarte\n• Desventaja: Si pierdes tu seed phrase, pierdes todo PARA SIEMPRE\n• Es como guardar efectivo en tu casa: tú eres responsable\n\n¿Cuál elegir?\n• Para empezar y aprender: custodial (exchange)\n• Para guardar grandes cantidades: non-custodial\n• Nunca pongas TODO en un solo lugar\n\nFuente: academy.binance.com/es — Binance Academy en español.', icon: '🏦' },
-                    { title: 'Hot Wallets vs Cold Wallets', text: 'HOT WALLETS (conectadas a internet):\n• Apps móviles: Freighter, Trust Wallet, MetaMask\n• Extensiones de navegador: Freighter (Stellar), MetaMask (Ethereum)\n• Ventaja: Cómodas para uso diario\n• Riesgo: Vulnerables a malware, phishing, hackeos\n\nCOLD WALLETS (desconectadas de internet):\n• Hardware wallets: Ledger Nano, Trezor ($50-150 USD)\n• Paper wallets: claves impresas en papel\n• Ventaja: Máxima seguridad contra ataques digitales\n• Riesgo: Si pierdes el dispositivo sin backup, pierdes todo\n\nRECOMENDACION:\n• Guarda en hot wallet solo lo que usarías en tu "bolsillo" (gastos diarios)\n• Guarda en cold wallet tus ahorros importantes\n• Siempre ten respaldo de tu seed phrase', icon: '🧊' },
-                    { title: 'Freighter: la wallet de Stellar', text: 'Freighter es la wallet oficial recomendada para Stellar. Es una extensión de navegador (Chrome, Firefox, Brave).\n\nCaracterísticas:\n• Maneja XLM y cualquier token de Stellar\n• Firma transacciones y smart contracts (Soroban)\n• Conecta con dApps del ecosistema Stellar\n• Gratuita y de código abierto\n\nEn Tonalli, tu wallet se gestiona internamente, pero si quieres explorar el ecosistema Stellar por tu cuenta, Freighter es el primer paso.\n\nPara instalarla: busca "Freighter Wallet" en la tienda de extensiones de tu navegador.\n\nFuente: freighter.app — sitio oficial de Freighter wallet.', icon: '🌟' },
-                ], keyTerms: [
-                    { term: 'Custodial wallet', definition: 'Wallet donde un tercero (exchange) guarda tus claves privadas' },
-                    { term: 'Non-custodial wallet', definition: 'Wallet donde TU controlas tus claves privadas directamente' },
-                    { term: 'Hot wallet', definition: 'Wallet conectada a internet. Cómoda pero vulnerable a ataques.' },
-                    { term: 'Cold wallet', definition: 'Wallet offline (hardware). Máxima seguridad para grandes cantidades.' },
-                    { term: 'Freighter', definition: 'Wallet oficial de Stellar como extensión de navegador' },
-                ] }),
+            content: `Wallets Custodial vs Non-Custodial
+
+CUSTODIAL (Un tercero guarda tus claves):
+• Ejemplos: Binance, Bitso, Coinbase
+• Ventaja: Si pierdes tu contraseña, puedes recuperarla
+• Desventaja: El exchange puede congelarte la cuenta, ser hackeado, o cerrar
+• Es como tener tu dinero en un banco: ellos lo "cuidan"
+
+NON-CUSTODIAL (Tú controlas tus claves):
+• Ejemplos: MetaMask, Freighter (Stellar), Ledger
+• Ventaja: Control total, nadie puede censurarte ni congelarte
+• Desventaja: Si pierdes tu seed phrase, pierdes todo PARA SIEMPRE
+• Es como guardar efectivo en tu casa: tú eres responsable
+
+¿Cuál elegir?
+• Para empezar y aprender: custodial (exchange)
+• Para guardar grandes cantidades: non-custodial
+• Nunca pongas TODO en un solo lugar
+
+Fuente: academy.binance.com/es — Binance Academy en español.
+
+Hot Wallets vs Cold Wallets
+
+HOT WALLETS (conectadas a internet):
+• Apps móviles: Freighter, Trust Wallet, MetaMask
+• Extensiones de navegador: Freighter (Stellar), MetaMask (Ethereum)
+• Ventaja: Cómodas para uso diario
+• Riesgo: Vulnerables a malware, phishing, hackeos
+
+COLD WALLETS (desconectadas de internet):
+• Hardware wallets: Ledger Nano, Trezor ($50-150 USD)
+• Paper wallets: claves impresas en papel
+• Ventaja: Máxima seguridad contra ataques digitales
+• Riesgo: Si pierdes el dispositivo sin backup, pierdes todo
+
+RECOMENDACION:
+• Guarda en hot wallet solo lo que usarías en tu "bolsillo" (gastos diarios)
+• Guarda en cold wallet tus ahorros importantes
+• Siempre ten respaldo de tu seed phrase
+
+Freighter: la wallet de Stellar
+
+Freighter es la wallet oficial recomendada para Stellar. Es una extensión de navegador (Chrome, Firefox, Brave).
+
+Características:
+• Maneja XLM y cualquier token de Stellar
+• Firma transacciones y smart contracts (Soroban)
+• Conecta con dApps del ecosistema Stellar
+• Gratuita y de código abierto
+
+En Tonalli, tu wallet se gestiona internamente, pero si quieres explorar el ecosistema Stellar por tu cuenta, Freighter es el primer paso.
+
+Para instalarla: busca "Freighter Wallet" en la tienda de extensiones de tu navegador.
+
+Fuente: freighter.app — sitio oficial de Freighter wallet.
+
+Términos clave:
+• Custodial wallet: Wallet donde un tercero (exchange) guarda tus claves privadas
+• Non-custodial wallet: Wallet donde TU controlas tus claves privadas directamente
+• Hot wallet: Wallet conectada a internet. Cómoda pero vulnerable a ataques.
+• Cold wallet: Wallet offline (hardware). Máxima seguridad para grandes cantidades.
+• Freighter: Wallet oficial de Stellar como extensión de navegador`,
             videoUrl: '', questionsPool: JSON.stringify(wq2),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({
             chapterId: ch3.id, type: 'lesson', order: 3, title: 'Seguridad y transacciones',
             xpReward: 30, passingScore: 80, questionsPerAttempt: 5,
-            content: JSON.stringify({ sections: [
-                    { title: 'Anatomía de una transacción Stellar', text: 'Cada transacción en Stellar contiene:\n\n• CUENTA ORIGEN: Quién envía (tu clave pública)\n• OPERACIONES: Qué quieres hacer (pagar, crear oferta, guardar datos)\n• COMISION (FEE): ~0.00001 XLM (fracciones de centavo)\n• NUMERO DE SECUENCIA: Previene transacciones duplicadas\n• FIRMA DIGITAL: Tu clave privada autoriza la operación\n• MEMO (opcional): Un mensaje adjunto\n\nTipos de operaciones comunes:\n• payment: Enviar XLM o tokens a otra cuenta\n• manage_data: Guardar datos en la cuenta (usado para NFTs/certificados)\n• create_account: Crear una cuenta nueva\n• change_trust: Aceptar un nuevo tipo de token\n\nPuedes ver cualquier transacción en stellar.expert (explorador de bloques de Stellar).', icon: '📊' },
-                    { title: 'NFTs y certificados en Stellar', text: 'Un NFT (Non-Fungible Token) es un token UNICO en la blockchain que prueba que algo te pertenece o que lograste algo.\n\nEn Tonalli, cuando completas un capítulo al 100%:\n1. Se ejecuta una transacción en Stellar\n2. Se usa la operación manage_data para guardar los datos del certificado\n3. Los datos incluyen: tu ID, el capítulo, tu calificación y la fecha\n4. La transacción queda registrada PERMANENTEMENTE en la blockchain\n5. Cualquiera puede verificar tu certificado con el hash de transacción\n\nEste certificado es:\n• INMUTABLE: Nadie puede modificarlo ni eliminarlo\n• VERIFICABLE: Cualquier persona o empresa puede confirmar su autenticidad\n• TUYO: Está en tu wallet, no depende de que Tonalli exista\n\nAdemás, con la alianza con ACTA, tus certificados cumplen el estándar W3C Verifiable Credentials 2.0, aceptado internacionalmente.\n\nFuente: docs.acta.build — documentación oficial de ACTA.', icon: '🏆' },
-                    { title: '10 reglas de seguridad en crypto', text: '1. NUNCA compartas tu clave privada o seed phrase con nadie\n2. NUNCA hagas clic en links de "airdrops gratis" o "duplica tu crypto"\n3. SIEMPRE verifica la dirección de destino antes de enviar fondos\n4. USA autenticación de 2 factores (2FA) en todos tus exchanges\n5. NO guardes grandes cantidades en hot wallets o exchanges\n6. DESCONFIA de cualquiera que te pida tu seed phrase (es SIEMPRE estafa)\n7. USA contraseñas únicas para cada servicio crypto\n8. VERIFICA las URLs antes de conectar tu wallet (phishing)\n9. ACTUALIZA siempre el software de tu wallet\n10. EMPIEZA con cantidades pequeñas hasta entender bien el sistema\n\nRecuerda: En crypto no hay servicio al cliente que te devuelva fondos perdidos. La seguridad es 100% tu responsabilidad.\n\nFuente: bitcoin.org/es/seguridad', icon: '✅' },
-                ], keyTerms: [
-                    { term: 'NFT', definition: 'Non-Fungible Token — token único que prueba propiedad o logro en blockchain' },
-                    { term: 'manage_data', definition: 'Operación de Stellar que guarda hasta 64 bytes de datos en una cuenta' },
-                    { term: 'Stellar Expert', definition: 'Explorador de bloques de Stellar donde verificar transacciones: stellar.expert' },
-                    { term: '2FA', definition: 'Autenticación de 2 factores — capa extra de seguridad con código temporal' },
-                    { term: 'Phishing', definition: 'Estafa que imita sitios legítimos para robar tus credenciales' },
-                ] }),
+            content: `Anatomía de una transacción Stellar
+
+Cada transacción en Stellar contiene:
+
+• CUENTA ORIGEN: Quién envía (tu clave pública)
+• OPERACIONES: Qué quieres hacer (pagar, crear oferta, guardar datos)
+• COMISION (FEE): ~0.00001 XLM (fracciones de centavo)
+• NUMERO DE SECUENCIA: Previene transacciones duplicadas
+• FIRMA DIGITAL: Tu clave privada autoriza la operación
+• MEMO (opcional): Un mensaje adjunto
+
+Tipos de operaciones comunes:
+• payment: Enviar XLM o tokens a otra cuenta
+• manage_data: Guardar datos en la cuenta (usado para NFTs/certificados)
+• create_account: Crear una cuenta nueva
+• change_trust: Aceptar un nuevo tipo de token
+
+Puedes ver cualquier transacción en stellar.expert (explorador de bloques de Stellar).
+
+NFTs y certificados en Stellar
+
+Un NFT (Non-Fungible Token) es un token UNICO en la blockchain que prueba que algo te pertenece o que lograste algo.
+
+En Tonalli, cuando completas un capítulo al 100%:
+1. Se ejecuta una transacción en Stellar
+2. Se usa la operación manage_data para guardar los datos del certificado
+3. Los datos incluyen: tu ID, el capítulo, tu calificación y la fecha
+4. La transacción queda registrada PERMANENTEMENTE en la blockchain
+5. Cualquiera puede verificar tu certificado con el hash de transacción
+
+Este certificado es:
+• INMUTABLE: Nadie puede modificarlo ni eliminarlo
+• VERIFICABLE: Cualquier persona o empresa puede confirmar su autenticidad
+• TUYO: Está en tu wallet, no depende de que Tonalli exista
+
+Además, con la alianza con ACTA, tus certificados cumplen el estándar W3C Verifiable Credentials 2.0, aceptado internacionalmente.
+
+Fuente: docs.acta.build — documentación oficial de ACTA.
+
+10 reglas de seguridad en crypto
+
+1. NUNCA compartas tu clave privada o seed phrase con nadie
+2. NUNCA hagas clic en links de "airdrops gratis" o "duplica tu crypto"
+3. SIEMPRE verifica la dirección de destino antes de enviar fondos
+4. USA autenticación de 2 factores (2FA) en todos tus exchanges
+5. NO guardes grandes cantidades en hot wallets o exchanges
+6. DESCONFIA de cualquiera que te pida tu seed phrase (es SIEMPRE estafa)
+7. USA contraseñas únicas para cada servicio crypto
+8. VERIFICA las URLs antes de conectar tu wallet (phishing)
+9. ACTUALIZA siempre el software de tu wallet
+10. EMPIEZA con cantidades pequeñas hasta entender bien el sistema
+
+Recuerda: En crypto no hay servicio al cliente que te devuelva fondos perdidos. La seguridad es 100% tu responsabilidad.
+
+Fuente: bitcoin.org/es/seguridad
+
+Términos clave:
+• NFT: Non-Fungible Token — token único que prueba propiedad o logro en blockchain
+• manage_data: Operación de Stellar que guarda hasta 64 bytes de datos en una cuenta
+• Stellar Expert: Explorador de bloques de Stellar donde verificar transacciones: stellar.expert
+• 2FA: Autenticación de 2 factores — capa extra de seguridad con código temporal
+• Phishing: Estafa que imita sitios legítimos para robar tus credenciales`,
             videoUrl: '', questionsPool: JSON.stringify(wq3),
         }));
         await chapterModuleRepo.save(chapterModuleRepo.create({

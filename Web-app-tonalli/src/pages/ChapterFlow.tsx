@@ -353,6 +353,9 @@ function SectionDot({ done, label, icon }: { done: boolean; label: string; icon:
 }
 
 function formatContent(content: string): string {
+  if (!content) return '<p>No hay contenido disponible aun.</p>';
+
+  // Try JSON format (legacy support)
   try {
     const parsed = JSON.parse(content);
     if (parsed.sections) {
@@ -360,12 +363,37 @@ function formatContent(content: string): string {
         `<h3>${s.icon || ''} ${s.title}</h3><p>${(s.text || '').replace(/\n/g, '<br/>')}</p>`
       ).join('');
       if (parsed.keyTerms?.length) {
-        html += '<h3>Términos clave</h3><ul>';
+        html += '<h3>Terminos clave</h3><ul>';
         html += parsed.keyTerms.map((t: any) => `<li><strong>${t.term}</strong>: ${t.definition}</li>`).join('');
         html += '</ul>';
       }
       return html;
     }
-  } catch { /* not JSON */ }
-  return content || '<p>No hay contenido disponible aún.</p>';
+  } catch { /* not JSON, treat as plain text */ }
+
+  // Plain text: convert line breaks and basic markdown-like formatting
+  return content
+    .split('\n\n')
+    .map((paragraph) => {
+      // Headers (lines ending with :)
+      if (paragraph.match(/^[A-ZÁÉÍÓÚÑ¿¡].{3,80}:?\s*$/m) && paragraph.split('\n').length === 1) {
+        return `<h3>${paragraph}</h3>`;
+      }
+      // Bullet lists
+      if (paragraph.includes('\n•') || paragraph.startsWith('•')) {
+        const lines = paragraph.split('\n');
+        const title = lines[0].startsWith('•') ? '' : `<p><strong>${lines[0]}</strong></p>`;
+        const items = lines.filter(l => l.startsWith('•')).map(l => `<li>${l.slice(1).trim()}</li>`).join('');
+        return `${title}<ul>${items}</ul>`;
+      }
+      // Numbered lists
+      if (paragraph.match(/^\d+\./m)) {
+        const lines = paragraph.split('\n');
+        const items = lines.filter(l => l.match(/^\d+\./)).map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('');
+        return `<ol>${items}</ol>`;
+      }
+      // Regular paragraph
+      return `<p>${paragraph.replace(/\n/g, '<br/>')}</p>`;
+    })
+    .join('');
 }

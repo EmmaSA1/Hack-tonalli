@@ -377,15 +377,15 @@ export function AdminDashboard() {
                       {/* Info tab */}
                       {tab === 'info' && (
                         <div>
-                          <label className="form-label">Contenido de lectura (JSON con sections y keyTerms)</label>
+                          <label className="form-label">Contenido de lectura (texto plano)</label>
                           <textarea
                             className="input-field"
-                            placeholder={'{\n  "sections": [\n    { "title": "...", "text": "...", "icon": "..." }\n  ],\n  "keyTerms": [\n    { "term": "...", "definition": "..." }\n  ]\n}'}
+                            placeholder={'¿Que es Blockchain?\n\nUna blockchain es un registro distribuido e inmutable...\n\nCaracteristicas principales:\n• Descentralizada\n• Inmutable\n• Transparente\n• Segura\n\nTerminos clave:\n• Bloque: unidad de datos en la cadena\n• Hash: huella digital unica'}
                             value={mod.content}
                             onChange={e => updateModule(i, 'content', e.target.value)}
-                            style={{ minHeight: 200, resize: 'vertical', fontFamily: 'monospace', fontSize: '0.8rem', lineHeight: 1.5 }}
+                            style={{ minHeight: 250, resize: 'vertical', fontFamily: 'Inter, sans-serif', fontSize: '0.85rem', lineHeight: 1.7 }}
                           />
-                          <p style={{ fontSize: '0.7rem', color: 'var(--text-subtle)', marginTop: 4 }}>Formato JSON. Cada section tiene: title, text, icon (emoji)</p>
+                          <p style={{ fontSize: '0.7rem', color: 'var(--text-subtle)', marginTop: 4 }}>Escribe el contenido como texto normal. Usa doble salto de linea para separar parrafos. Usa • para listas.</p>
                         </div>
                       )}
 
