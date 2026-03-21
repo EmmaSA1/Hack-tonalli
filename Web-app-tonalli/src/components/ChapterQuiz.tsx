@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from '../services/api';
 import { LivesIndicator } from './LivesIndicator';
+import { useIssueCertificate } from '../hooks/useIssueCertificate';
 import type { QuizQuestion } from '../types';
 
 interface Props {
@@ -31,6 +32,8 @@ export function ChapterQuiz({
   const [abandonResult, setAbandonResult] = useState<any>(null);
   const [violations, setViolations] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
+  const [certResult, setCertResult] = useState<any>(null);
+  const { issueCertificate, issuing: issuingCert } = useIssueCertificate();
 
   // Ref to track if quiz is active (avoid stale closure issues)
   const quizActiveRef = useRef(false);
@@ -229,6 +232,19 @@ export function ChapterQuiz({
       setResult(res);
       setStarted(false);
       if (res.passed) {
+        // If final exam passed, issue ACTA certificate
+        if (type === 'final_exam') {
+          try {
+            const cert = await issueCertificate({
+              chapterId,
+              chapterTitle,
+              examScore: res.score,
+            });
+            setCertResult(cert);
+          } catch (e) {
+            console.warn('Certificate issuance failed:', e);
+          }
+        }
         onComplete();
       }
     } catch (err: any) {
@@ -371,6 +387,29 @@ export function ChapterQuiz({
           <p className="text-yellow-400 font-bold">+{result.xpEarned} XP</p>
         )}
         <p className="text-gray-300 mt-4">{result.message}</p>
+
+        {/* ACTA Certificate */}
+        {certResult?.success && (
+          <div className="mt-6 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-5">
+            <div className="text-3xl mb-2">{'\uD83C\uDFC6'}</div>
+            <h4 className="text-yellow-400 font-bold text-lg">Certificado ACTA Emitido</h4>
+            <p className="text-gray-400 text-sm mt-1">Certificado oficial validado en Stellar Blockchain</p>
+            <div className="mt-3 bg-gray-900/50 rounded-lg p-3 text-left">
+              <p className="text-xs text-gray-500">VC ID:</p>
+              <p className="text-xs text-gray-300 font-mono break-all">{certResult.vcId}</p>
+              <p className="text-xs text-gray-500 mt-2">TX Hash:</p>
+              <p className="text-xs text-gray-300 font-mono break-all">{certResult.txHash}</p>
+            </div>
+            <a href="/certificates" className="inline-block mt-3 text-sm text-yellow-400 hover:text-yellow-300 font-bold">
+              Ver mis certificados &rarr;
+            </a>
+          </div>
+        )}
+        {issuingCert && (
+          <div className="mt-4 text-yellow-400 text-sm animate-pulse">
+            Emitiendo certificado ACTA en Stellar...
+          </div>
+        )}
 
         {result.livesRemaining !== undefined && result.livesRemaining >= 0 && !result.passed && (
           <div className="mt-4">

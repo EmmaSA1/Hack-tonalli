@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Lock, ChevronRight, BookOpen, Play, FileQuestion, Trophy } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import type { ChapterWithProgress, ChapterModuleData } from '../types';
@@ -38,13 +40,7 @@ export function ChapterFlow() {
 
   const openModule = async (mod: ChapterModuleData) => {
     if (!mod.unlocked) return;
-
-    if (mod.type === 'final_exam') {
-      setView({ step: 'final_exam', mod });
-      return;
-    }
-
-    // Lesson module: figure out which section to show
+    if (mod.type === 'final_exam') { setView({ step: 'final_exam', mod }); return; }
     const s = mod.sections!;
     if (!s.info.completed && s.info.hasContent) {
       const data = await apiService.getModuleContent(mod.id);
@@ -56,30 +52,23 @@ export function ChapterFlow() {
     } else if (!s.quiz.completed) {
       setView({ step: 'quiz', mod });
     } else {
-      // All done, let them review
       const data = await apiService.getModuleContent(mod.id);
       setView({ step: 'info', mod, content: data.content });
     }
   };
 
   const goToSection = async (mod: ChapterModuleData, section: 'info' | 'video' | 'quiz') => {
-    if (section === 'quiz') {
-      setView({ step: 'quiz', mod });
-    } else {
+    if (section === 'quiz') { setView({ step: 'quiz', mod }); }
+    else {
       const data = await apiService.getModuleContent(mod.id);
-      if (section === 'info') {
-        setView({ step: 'info', mod, content: data.content });
-        setInfoRead(false);
-      } else {
-        setView({ step: 'video', mod, videoUrl: data.videoUrl });
-      }
+      if (section === 'info') { setView({ step: 'info', mod, content: data.content }); setInfoRead(false); }
+      else { setView({ step: 'video', mod, videoUrl: data.videoUrl }); }
     }
   };
 
   const handleCompleteInfo = async (moduleId: string) => {
     await apiService.completeInfoModule(moduleId);
     await loadChapter();
-    // Auto-advance to video or quiz
     const updated = await apiService.getChapterWithProgress(chapterId!);
     const mod = updated.modules.find((m: any) => m.id === moduleId);
     if (mod?.sections?.video?.hasVideo && !mod.sections.video.completed) {
@@ -94,24 +83,16 @@ export function ChapterFlow() {
     await loadChapter();
     const updated = await apiService.getChapterWithProgress(chapterId!);
     const mod = updated.modules.find((m: any) => m.id === moduleId);
-    if (mod && !mod.sections?.quiz?.completed) {
-      setView({ step: 'quiz', mod });
-    } else {
-      setView({ step: 'overview' });
-    }
+    if (mod && !mod.sections?.quiz?.completed) { setView({ step: 'quiz', mod }); }
+    else { setView({ step: 'overview' }); }
   };
 
   const handleQuizComplete = async () => {
     await loadChapter();
     const updated = await apiService.getChapterWithProgress(chapterId!);
     setChapter(updated);
-
-    // Check 75% conversion
-    if (updated.completionPercent === 75 && !user?.isPremium) {
-      setShowConversion(true);
-    } else {
-      setView({ step: 'overview' });
-    }
+    if (updated.completionPercent === 75 && !user?.isPremium) { setShowConversion(true); }
+    else { setView({ step: 'overview' }); }
   };
 
   const handleUnlockExam = async () => {
@@ -121,37 +102,37 @@ export function ChapterFlow() {
     setView({ step: 'overview' });
   };
 
+  // ── Loading ──────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-400 border-t-transparent" />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Cargando capitulo...</div>
       </div>
     );
   }
 
   if (!chapter) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-red-400">Capitulo no encontrado</div>;
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--danger)' }}>Capitulo no encontrado</div>
+      </div>
+    );
   }
 
-  // Chapter locked by week restriction
+  // ── Locked by week ───────────────────────────────────────────────────────
   if (chapter.accessible === false) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-4">{'\uD83D\uDD12'}</div>
-          <h2 className="text-white text-2xl font-bold mb-2">Capitulo bloqueado</h2>
-          <p className="text-gray-400 mb-4">{chapter.lockedReason}</p>
-          {chapter.releaseWeek && (
-            <p className="text-yellow-400 text-sm mb-6">Semana de liberacion: {chapter.releaseWeek}</p>
-          )}
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ textAlign: 'center', maxWidth: 400 }}>
+          <Lock size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 8 }}>Capitulo bloqueado</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>{chapter.lockedReason}</p>
           {!chapter.isPremium && (
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
-              <p className="text-yellow-400 font-bold text-sm">Los usuarios Premium acceden a 2 capitulos por semana</p>
+            <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px solid rgba(201,146,10,0.3)', background: 'rgba(201,146,10,0.06)' }}>
+              <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.9rem' }}>Los usuarios Premium acceden a 2 capitulos por semana</p>
             </div>
           )}
-          <button onClick={() => navigate('/chapters')} className="bg-gray-700 text-white py-2 px-6 rounded-xl hover:bg-gray-600">
-            &larr; Volver a capitulos
-          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/chapters')}>&larr; Volver</button>
         </div>
       </div>
     );
@@ -168,46 +149,46 @@ export function ChapterFlow() {
     );
   }
 
-  // ── Active view rendering ────────────────────────────────────────────────
-
+  // ── Active view (info / video / quiz / exam) ────────────────────────────
   if (view.step !== 'overview') {
     const mod = 'mod' in view ? view.mod : null;
     return (
-      <div className="min-h-screen bg-gray-900">
-        <div className="bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setView({ step: 'overview' })} className="text-gray-400 hover:text-white text-xl">&larr;</button>
-          <div className="flex-1">
-            <h2 className="text-white font-bold">{mod?.title}</h2>
-            <p className="text-gray-400 text-sm">
+      <div style={{ minHeight: '100vh' }}>
+        {/* Header bar */}
+        <div style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <button onClick={() => setView({ step: 'overview' })} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>&larr;</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: '1rem' }}>{mod?.title}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
               {chapter.title} &middot; {view.step === 'info' ? 'Lectura' : view.step === 'video' ? 'Video' : view.step === 'quiz' ? 'Quiz' : 'Examen Final'}
-            </p>
+            </div>
           </div>
           {(view.step === 'quiz' || view.step === 'final_exam') && mod && (
             <LivesIndicator lives={mod.livesRemaining} lockedUntil={mod.lockedUntil} />
           )}
         </div>
 
-        <div className="max-w-3xl mx-auto p-4">
+        <div className="container" style={{ maxWidth: 720, margin: '0 auto', padding: '24px 20px' }}>
           {/* Section tabs for lesson modules */}
           {mod?.type === 'lesson' && mod.sections && (
-            <div className="flex gap-2 mb-6">
+            <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
               {[
-                { key: 'info' as const, label: 'Lectura', icon: '\uD83D\uDCDA', done: mod.sections.info.completed },
-                { key: 'video' as const, label: 'Video', icon: '\uD83C\uDFAC', done: mod.sections.video.completed },
-                { key: 'quiz' as const, label: 'Quiz', icon: '\uD83D\uDCDD', done: mod.sections.quiz.completed },
+                { key: 'info' as const, label: 'Lectura', icon: <BookOpen size={14} />, done: mod.sections.info.completed },
+                { key: 'video' as const, label: 'Video', icon: <Play size={14} />, done: mod.sections.video.completed },
+                { key: 'quiz' as const, label: 'Quiz', icon: <FileQuestion size={14} />, done: mod.sections.quiz.completed },
               ].map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => goToSection(mod, tab.key)}
-                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition ${
-                    view.step === tab.key
-                      ? 'bg-yellow-500 text-gray-900'
-                      : tab.done
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                  }`}
+                  style={{
+                    flex: 1, padding: '10px 12px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: view.step === tab.key ? 'var(--primary)' : tab.done ? 'rgba(63,185,80,0.12)' : 'var(--bg-overlay)',
+                    color: view.step === tab.key ? '#fff' : tab.done ? 'var(--success)' : 'var(--text-muted)',
+                    border: view.step === tab.key ? '2px solid var(--primary)' : tab.done ? '1px solid rgba(63,185,80,0.3)' : '1px solid var(--border)',
+                  }}
                 >
-                  {tab.icon} {tab.label} {tab.done ? '\u2714' : ''}
+                  {tab.icon} {tab.label} {tab.done ? ' \u2714' : ''}
                 </button>
               ))}
             </div>
@@ -216,64 +197,35 @@ export function ChapterFlow() {
           {/* Info */}
           {view.step === 'info' && 'content' in view && (
             <div>
-              <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: formatContent(view.content || '') }} />
+              <div style={{ lineHeight: 1.8, color: 'var(--text)', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: formatContent(view.content || '') }} />
               {!mod?.sections?.info.completed && (
-                <div className="mt-8 text-center">
+                <div style={{ textAlign: 'center', marginTop: 32 }}>
                   {!infoRead ? (
-                    <button onClick={() => setInfoRead(true)} className="bg-yellow-500 text-gray-900 font-bold py-3 px-8 rounded-xl hover:bg-yellow-400">
-                      He terminado de leer
-                    </button>
+                    <button className="btn btn-primary btn-lg" onClick={() => setInfoRead(true)}>He terminado de leer</button>
                   ) : (
-                    <button onClick={() => handleCompleteInfo(mod!.id)} className="bg-green-500 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-400">
-                      Completar y continuar
-                    </button>
+                    <button className="btn btn-primary btn-lg" style={{ background: 'var(--success)' }} onClick={() => handleCompleteInfo(mod!.id)}>Completar y continuar &rarr;</button>
                   )}
                 </div>
+              )}
+              {mod?.sections?.info.completed && (
+                <div style={{ textAlign: 'center', marginTop: 24, color: 'var(--success)', fontWeight: 700 }}>\u2714 Lectura completada</div>
               )}
             </div>
           )}
 
           {/* Video */}
           {view.step === 'video' && 'videoUrl' in view && mod && (
-            <VideoModule
-              moduleId={mod.id}
-              videoUrl={view.videoUrl}
-              completed={!!mod.sections?.video.completed}
-              progress={mod.sections?.video.progress || 0}
-              onComplete={() => handleVideoComplete(mod.id)}
-            />
+            <VideoModule moduleId={mod.id} videoUrl={view.videoUrl} completed={!!mod.sections?.video.completed} progress={mod.sections?.video.progress || 0} onComplete={() => handleVideoComplete(mod.id)} />
           )}
 
-          {/* Quiz (module quiz) */}
+          {/* Quiz */}
           {view.step === 'quiz' && mod && (
-            <ChapterQuiz
-              moduleId={mod.id}
-              type="quiz"
-              lives={mod.livesRemaining}
-              lockedUntil={mod.lockedUntil}
-              completed={!!mod.sections?.quiz.completed}
-              bestScore={mod.sections?.quiz.score || 0}
-              isPremium={chapter.isPremium}
-              chapterId={chapter.id}
-              chapterTitle={chapter.title}
-              onComplete={handleQuizComplete}
-            />
+            <ChapterQuiz moduleId={mod.id} type="quiz" lives={mod.livesRemaining} lockedUntil={mod.lockedUntil} completed={!!mod.sections?.quiz.completed} bestScore={mod.sections?.quiz.score || 0} isPremium={chapter.isPremium} chapterId={chapter.id} chapterTitle={chapter.title} onComplete={handleQuizComplete} />
           )}
 
           {/* Final exam */}
           {view.step === 'final_exam' && mod && (
-            <ChapterQuiz
-              moduleId={mod.id}
-              type="final_exam"
-              lives={mod.livesRemaining}
-              lockedUntil={mod.lockedUntil}
-              completed={mod.completed}
-              bestScore={mod.score}
-              isPremium={chapter.isPremium}
-              chapterId={chapter.id}
-              chapterTitle={chapter.title}
-              onComplete={handleQuizComplete}
-            />
+            <ChapterQuiz moduleId={mod.id} type="final_exam" lives={mod.livesRemaining} lockedUntil={mod.lockedUntil} completed={mod.completed} bestScore={mod.score} isPremium={chapter.isPremium} chapterId={chapter.id} chapterTitle={chapter.title} onComplete={handleQuizComplete} />
           )}
         </div>
       </div>
@@ -281,143 +233,192 @@ export function ChapterFlow() {
   }
 
   // ── Chapter overview ─────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen bg-gray-900 pb-20">
-      <div className="px-4 py-6">
-        <button onClick={() => navigate('/chapters')} className="text-gray-400 hover:text-white mb-3 block">&larr; Capitulos</button>
-        <h1 className="text-2xl font-bold text-white mb-2">{chapter.title}</h1>
-        <p className="text-gray-400">{chapter.description}</p>
+    <div style={{ minHeight: '100vh', paddingBottom: 60 }}>
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(26,127,75,0.12), rgba(201,146,10,0.08))',
+        borderBottom: '1px solid var(--border)',
+        padding: '32px 24px 24px',
+      }}>
+        <div className="container">
+          <button onClick={() => navigate('/chapters')} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: 16, fontSize: '0.9rem' }}>&larr; Capitulos</button>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 6, fontFamily: "'Space Grotesk', sans-serif" }}>{chapter.title}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 20 }}>{chapter.description}</p>
 
-        <div className="mt-4">
-          <div className="flex justify-between text-sm mb-1">
-            <span className="text-gray-400">Progreso</span>
-            <span className="text-yellow-400 font-bold">{chapter.completionPercent}%</span>
-          </div>
-          <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full transition-all duration-500" style={{ width: `${chapter.completionPercent}%` }} />
+          {/* Progress bar */}
+          <div style={{ maxWidth: 400 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 6 }}>
+              <span style={{ color: 'var(--text-muted)' }}>Progreso</span>
+              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{chapter.completionPercent}%</span>
+            </div>
+            <div className="progress-bar" style={{ height: 10 }}>
+              <div className="progress-fill" style={{ width: `${chapter.completionPercent}%` }} />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 space-y-4">
-        {chapter.modules.map((mod) => {
-          const isExam = mod.type === 'final_exam';
-          const s = mod.sections;
-          const sectionsDone = s ? [s.info.completed, s.video.completed || !s.video.hasVideo, s.quiz.completed].filter(Boolean).length : 0;
-          const sectionsTotal = s ? (s.video.hasVideo ? 3 : 2) : 0;
+      {/* 4 Modules */}
+      <div className="container" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {chapter.modules.map((mod, i) => {
+            const isExam = mod.type === 'final_exam';
+            const s = mod.sections;
+            const sectionsDone = s ? [s.info.completed, s.video.completed || !s.video.hasVideo, s.quiz.completed].filter(Boolean).length : 0;
+            const sectionsTotal = s ? (s.video.hasVideo ? 3 : 2) : 0;
 
-          return (
-            <button
-              key={mod.id}
-              onClick={() => openModule(mod)}
-              disabled={!mod.unlocked}
-              className={`w-full text-left rounded-xl p-4 transition-all ${
-                mod.unlocked
-                  ? 'bg-gray-800 hover:bg-gray-750 cursor-pointer border border-gray-700 hover:border-gray-600'
-                  : 'bg-gray-800/50 opacity-50 cursor-not-allowed border border-gray-800'
-              }`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold bg-gradient-to-br ${
-                  mod.completed ? 'from-green-500 to-green-400' : isExam ? 'from-yellow-600 to-yellow-500' : 'from-blue-600 to-blue-500'
-                }`}>
-                  {mod.completed ? '\u2714' : isExam ? '\uD83C\uDFC6' : mod.order}
-                </div>
+            const colors = isExam
+              ? { bg: 'rgba(201,146,10,0.12)', border: 'rgba(201,146,10,0.3)', icon: 'linear-gradient(135deg, #c9920a, #f0b429)' }
+              : mod.completed
+                ? { bg: 'rgba(63,185,80,0.08)', border: 'rgba(63,185,80,0.3)', icon: 'linear-gradient(135deg, #1a7f4b, #3fb950)' }
+                : { bg: 'var(--bg-elevated)', border: 'var(--border)', icon: 'linear-gradient(135deg, #58a6ff, #8b5cf6)' };
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 font-bold">
-                      {isExam ? 'EXAMEN FINAL' : `MODULO ${mod.order}`}
-                    </span>
-                    {mod.completed && <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Completado</span>}
-                    {!mod.unlocked && <span className="text-xs bg-gray-600/50 text-gray-400 px-2 py-0.5 rounded-full">Bloqueado</span>}
+            return (
+              <motion.div
+                key={mod.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+              >
+                <button
+                  onClick={() => openModule(mod)}
+                  disabled={!mod.unlocked}
+                  style={{
+                    width: '100%', textAlign: 'left', borderRadius: 14, padding: '18px 20px',
+                    background: colors.bg,
+                    border: `1px solid ${mod.unlocked ? colors.border : 'var(--border)'}`,
+                    cursor: mod.unlocked ? 'pointer' : 'not-allowed',
+                    opacity: mod.unlocked ? 1 : 0.4,
+                    transition: 'all 0.2s',
+                    display: 'flex', alignItems: 'center', gap: 16,
+                    color: 'var(--text)',
+                  }}
+                >
+                  {/* Module circle */}
+                  <div style={{
+                    width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+                    background: mod.unlocked ? colors.icon : 'var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 900, fontSize: '1.1rem',
+                    boxShadow: mod.unlocked && !mod.completed ? '0 0 0 4px rgba(26,127,75,0.15)' : 'none',
+                  }}>
+                    {!mod.unlocked ? <Lock size={20} /> : mod.completed ? '\u2714' : isExam ? <Trophy size={22} /> : mod.order}
                   </div>
-                  <h3 className="text-white font-semibold mt-0.5">{mod.title}</h3>
 
-                  {/* Section progress for lesson modules */}
-                  {s && !mod.completed && mod.unlocked && (
-                    <div className="flex items-center gap-3 mt-2">
-                      <SectionDot done={s.info.completed} label="Lectura" icon={'\uD83D\uDCDA'} />
-                      {s.video.hasVideo && <SectionDot done={s.video.completed} label="Video" icon={'\uD83C\uDFAC'} />}
-                      <SectionDot done={s.quiz.completed} label="Quiz" icon={'\uD83D\uDCDD'} />
-                      <span className="text-xs text-gray-600 ml-auto">{sectionsDone}/{sectionsTotal}</span>
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {isExam ? 'Examen Final' : `Modulo ${mod.order}`}
+                      </span>
+                      {mod.completed && (
+                        <span style={{ fontSize: '0.68rem', background: 'rgba(63,185,80,0.15)', color: 'var(--success)', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>Completado</span>
+                      )}
+                      {!mod.unlocked && (
+                        <span style={{ fontSize: '0.68rem', background: 'var(--bg-subtle)', color: 'var(--text-muted)', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>Bloqueado</span>
+                      )}
                     </div>
-                  )}
+                    <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>{mod.title}</div>
 
-                  {isExam && (
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      <span>10 preguntas de los 3 modulos</span>
-                      <span>Min. 80%</span>
+                    {/* Section dots for lesson modules */}
+                    {s && !mod.completed && mod.unlocked && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+                        <SectionBadge done={s.info.completed} label="Lectura" icon={<BookOpen size={12} />} />
+                        {s.video.hasVideo && <SectionBadge done={s.video.completed} label="Video" icon={<Play size={12} />} />}
+                        <SectionBadge done={s.quiz.completed} label="Quiz" icon={<FileQuestion size={12} />} />
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', marginLeft: 'auto' }}>{sectionsDone}/{sectionsTotal}</span>
+                      </div>
+                    )}
+
+                    {isExam && !mod.completed && (
+                      <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        <span>10 preguntas de los 3 modulos</span>
+                        <span>Min. 80%</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Score or arrow */}
+                  {mod.score > 0 ? (
+                    <div style={{ fontWeight: 900, fontSize: '1.2rem', color: mod.score >= 80 ? 'var(--success)' : 'var(--accent)', flexShrink: 0 }}>
+                      {mod.score}%
                     </div>
-                  )}
-                </div>
-
-                {mod.score > 0 && (
-                  <span className={`text-lg font-bold ${mod.score >= 80 ? 'text-green-400' : 'text-yellow-400'}`}>
-                    {mod.score}%
-                  </span>
-                )}
-              </div>
-            </button>
-          );
-        })}
+                  ) : mod.unlocked ? (
+                    <ChevronRight size={20} color="var(--text-subtle)" style={{ flexShrink: 0 }} />
+                  ) : null}
+                </button>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
 
-function SectionDot({ done, label, icon }: { done: boolean; label: string; icon: string }) {
+function SectionBadge({ done, label, icon }: { done: boolean; label: string; icon: React.ReactNode }) {
   return (
-    <div className={`flex items-center gap-1 text-xs ${done ? 'text-green-400' : 'text-gray-600'}`}>
-      <span>{icon}</span>
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem',
+      color: done ? 'var(--success)' : 'var(--text-subtle)',
+      fontWeight: done ? 700 : 400,
+    }}>
+      {icon}
       <span>{done ? '\u2714' : label}</span>
     </div>
   );
 }
 
 function formatContent(content: string): string {
-  if (!content) return '<p>No hay contenido disponible aun.</p>';
+  if (!content) return '<p style="color:var(--text-muted)">No hay contenido disponible aun.</p>';
 
-  // Try JSON format (legacy support)
+  // Try JSON (legacy)
   try {
     const parsed = JSON.parse(content);
     if (parsed.sections) {
       let html = parsed.sections.map((s: any) =>
-        `<h3>${s.icon || ''} ${s.title}</h3><p>${(s.text || '').replace(/\n/g, '<br/>')}</p>`
+        `<h3 style="font-size:1.15rem;font-weight:700;margin:24px 0 8px;color:var(--text);font-family:'Space Grotesk',sans-serif">${s.icon || ''} ${s.title}</h3><p style="color:var(--text-muted);margin-bottom:12px">${(s.text || '').replace(/\n/g, '<br/>')}</p>`
       ).join('');
       if (parsed.keyTerms?.length) {
-        html += '<h3>Terminos clave</h3><ul>';
-        html += parsed.keyTerms.map((t: any) => `<li><strong>${t.term}</strong>: ${t.definition}</li>`).join('');
+        html += '<h3 style="font-size:1.05rem;font-weight:700;margin:24px 0 8px;color:var(--accent)">Terminos clave</h3><ul style="padding-left:20px">';
+        html += parsed.keyTerms.map((t: any) => `<li style="margin-bottom:6px;color:var(--text-muted)"><strong style="color:var(--text)">${t.term}</strong>: ${t.definition}</li>`).join('');
         html += '</ul>';
       }
       return html;
     }
-  } catch { /* not JSON, treat as plain text */ }
+  } catch { /* plain text */ }
 
-  // Plain text: convert line breaks and basic markdown-like formatting
+  // Plain text
   return content
     .split('\n\n')
     .map((paragraph) => {
-      // Headers (lines ending with :)
-      if (paragraph.match(/^[A-ZÁÉÍÓÚÑ¿¡].{3,80}:?\s*$/m) && paragraph.split('\n').length === 1) {
-        return `<h3>${paragraph}</h3>`;
+      const trimmed = paragraph.trim();
+      if (!trimmed) return '';
+
+      // Short standalone line = heading
+      if (trimmed.match(/^[A-ZÁÉÍÓÚÑ¿¡].{3,80}:?\s*$/) && !trimmed.includes('\n')) {
+        return `<h3 style="font-size:1.15rem;font-weight:700;margin:28px 0 10px;color:var(--text);font-family:'Space Grotesk',sans-serif">${trimmed}</h3>`;
       }
-      // Bullet lists
-      if (paragraph.includes('\n•') || paragraph.startsWith('•')) {
-        const lines = paragraph.split('\n');
-        const title = lines[0].startsWith('•') ? '' : `<p><strong>${lines[0]}</strong></p>`;
-        const items = lines.filter(l => l.startsWith('•')).map(l => `<li>${l.slice(1).trim()}</li>`).join('');
-        return `${title}<ul>${items}</ul>`;
+      // Bullet list
+      if (trimmed.includes('\n\u2022') || trimmed.startsWith('\u2022')) {
+        const lines = trimmed.split('\n');
+        const title = lines[0].startsWith('\u2022') ? '' : `<p style="color:var(--text);font-weight:600;margin-bottom:6px">${lines[0]}</p>`;
+        const items = lines.filter(l => l.startsWith('\u2022')).map(l =>
+          `<li style="margin-bottom:4px;color:var(--text-muted);padding-left:4px">${l.slice(1).trim()}</li>`
+        ).join('');
+        return `${title}<ul style="padding-left:20px;margin-bottom:12px">${items}</ul>`;
       }
-      // Numbered lists
-      if (paragraph.match(/^\d+\./m)) {
-        const lines = paragraph.split('\n');
-        const items = lines.filter(l => l.match(/^\d+\./)).map(l => `<li>${l.replace(/^\d+\.\s*/, '')}</li>`).join('');
-        return `<ol>${items}</ol>`;
+      // Numbered list
+      if (trimmed.match(/^\d+\./m)) {
+        const lines = trimmed.split('\n');
+        const items = lines.filter(l => l.match(/^\d+\./)).map(l =>
+          `<li style="margin-bottom:6px;color:var(--text-muted)">${l.replace(/^\d+\.\s*/, '')}</li>`
+        ).join('');
+        return `<ol style="padding-left:20px;margin-bottom:12px">${items}</ol>`;
       }
       // Regular paragraph
-      return `<p>${paragraph.replace(/\n/g, '<br/>')}</p>`;
+      return `<p style="color:var(--text-muted);margin-bottom:14px;line-height:1.8">${trimmed.replace(/\n/g, '<br/>')}</p>`;
     })
     .join('');
 }
