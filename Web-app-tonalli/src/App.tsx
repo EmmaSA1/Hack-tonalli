@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ActaConfig, testNet } from '@acta-team/acta-sdk';
 import { Navbar } from './components/Navbar';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
@@ -47,8 +48,11 @@ function AppLayout({ children, showNavbar = true }: { children: React.ReactNode;
   );
 }
 
+const ACTA_API_KEY = import.meta.env.VITE_ACTA_API_KEY || '';
+
 export default function App() {
   return (
+    <ActaConfig baseURL={testNet} apiKey={ACTA_API_KEY}>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
@@ -105,5 +109,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
+    </ActaConfig>
   );
 }
