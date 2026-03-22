@@ -22,6 +22,23 @@ export function Leaderboard() {
   const [cityData, setCityData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [weeklyError, setWeeklyError] = useState('');
+  const [demoResult, setDemoResult] = useState<any>(null);
+  const [demoing, setDemoing] = useState(false);
+
+  const handleDemoDistribute = async () => {
+    setDemoing(true);
+    try {
+      const result = await apiService.demoPodiumDistribute();
+      setDemoResult(result);
+      // Refresh weekly data after distribution
+      const data = await apiService.getWeeklyPodium();
+      setWeeklyData(data);
+    } catch (err: any) {
+      console.error(err);
+      setDemoResult({ message: 'Error: ' + (err.response?.data?.message || err.message) });
+    }
+    setDemoing(false);
+  };
 
   useEffect(() => {
     if (user?.plan !== 'free') loadData();
@@ -317,6 +334,103 @@ export function Leaderboard() {
               }, i))}
             </div>
           </>
+        )}
+
+        {/* Demo: Distribute Podium Rewards */}
+        {tab === 'weekly' && (
+          <div style={{ marginTop: 32, textAlign: 'center' }}>
+            <button
+              onClick={handleDemoDistribute}
+              disabled={demoing}
+              style={{
+                padding: '14px 32px',
+                borderRadius: 14,
+                border: '2px solid #FFD700',
+                background: 'linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,107,53,0.2))',
+                color: '#FFD700',
+                fontWeight: 800,
+                fontSize: '1rem',
+                cursor: demoing ? 'not-allowed' : 'pointer',
+                opacity: demoing ? 0.6 : 1,
+              }}
+            >
+              {demoing ? 'Distribuyendo...' : '🏆 Demo: Distribuir Recompensas del Podio'}
+            </button>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
+              Simula el cierre semanal: envía XLM + mintea Podium NFTs via Smart Contracts
+            </p>
+
+            {demoResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                  marginTop: 20,
+                  background: 'rgba(0,212,170,0.08)',
+                  border: '1px solid rgba(0,212,170,0.3)',
+                  borderRadius: 16,
+                  padding: '20px 24px',
+                  textAlign: 'left',
+                }}
+              >
+                <h4 style={{ fontWeight: 800, color: '#00D4AA', marginBottom: 12, fontSize: '1rem' }}>
+                  {demoResult.message}
+                </h4>
+                {demoResult.winners?.map((w: any) => (
+                  <div key={w.position} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 0',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  }}>
+                    <span style={{ fontSize: '1.5rem' }}>
+                      {w.position === 1 ? '🥇' : w.position === 2 ? '🥈' : '🥉'}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>
+                        Posición {w.position} — ${w.rewardUsd} USD ({w.rewardXlm} XLM)
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                        Status: <span style={{ color: w.status === 'paid' ? '#00D4AA' : '#F5A623' }}>{w.status}</span>
+                      </div>
+                      {w.txHash && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                          XLM TX: <code style={{ color: '#E91E8C' }}>{w.txHash.slice(0, 16)}...</code>
+                        </div>
+                      )}
+                      {w.nftTxHash && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                          NFT TX: <code style={{ color: '#F5A623' }}>{w.nftTxHash.slice(0, 16)}...</code>
+                          {' '}
+                          <a
+                            href={`https://stellar.expert/explorer/testnet/tx/${w.nftTxHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: '#00D4AA', textDecoration: 'underline', fontSize: '0.7rem' }}
+                          >
+                            Ver en Stellar
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {demoResult.winners && (
+                  <div style={{
+                    marginTop: 16, padding: '12px 16px',
+                    background: 'rgba(245,166,35,0.08)',
+                    border: '1px solid rgba(245,166,35,0.2)',
+                    borderRadius: 10,
+                    fontSize: '0.75rem', color: '#F5A623',
+                  }}>
+                    <strong>Smart Contracts usados:</strong><br />
+                    1. <code>learn-to-earn</code> → Envío de XLM via Stellar<br />
+                    2. <code>podio-nft</code> → Mint de NFT conmemorativo en Soroban
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </div>
         )}
 
         {/* Bottom message */}

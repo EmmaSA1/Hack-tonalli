@@ -199,6 +199,57 @@ export class PodiumService {
     }
   }
 
+  // Demo: simulate podium distribution with the current user as 1st place
+  async demoDistributeRewards(currentUserId: string) {
+    const week = this.getCurrentWeek();
+    const user = await this.usersRepo.findOne({ where: { id: currentUserId } });
+    if (!user) throw new ForbiddenException('User not found');
+
+    // Create/update a weekly score for this user so they appear in the leaderboard
+    let score = await this.scoresRepo.findOne({ where: { userId: currentUserId, week } });
+    if (!score) {
+      score = this.scoresRepo.create({ userId: currentUserId, week });
+    }
+    score.chaptersCompleted = 3;
+    score.avgExamScore = 95;
+    score.activeDays = 7;
+    score.totalScore = 3 * 100 + 95 + 7 * 10; // 465
+    await this.scoresRepo.save(score);
+
+    // Create simulated 2nd and 3rd place users (use existing users or fake entries)
+    const allUsers = await this.usersRepo.find({ take: 10, order: { totalXp: 'DESC' } });
+    const otherUsers = allUsers.filter(u => u.id !== currentUserId).slice(0, 2);
+
+    for (let i = 0; i < otherUsers.length; i++) {
+      let otherScore = await this.scoresRepo.findOne({ where: { userId: otherUsers[i].id, week } });
+      if (!otherScore) {
+        otherScore = this.scoresRepo.create({ userId: otherUsers[i].id, week });
+      }
+      otherScore.chaptersCompleted = 2 - i;
+      otherScore.avgExamScore = 85 - i * 10;
+      otherScore.activeDays = 5 - i;
+      otherScore.totalScore = otherScore.chaptersCompleted * 100 + otherScore.avgExamScore + otherScore.activeDays * 10;
+      await this.scoresRepo.save(otherScore);
+    }
+
+    // Now run the real distribution
+    const results = await this.distributeWeeklyRewards(week);
+
+    return {
+      message: `🏆 Demo: Podio de la semana ${week} distribuido`,
+      week,
+      winners: results.map(r => ({
+        position: r.position,
+        userId: r.userId,
+        rewardUsd: r.rewardUsd,
+        rewardXlm: r.rewardXlm,
+        txHash: r.txHash,
+        nftTxHash: r.nftTxHash,
+        status: r.status,
+      })),
+    };
+  }
+
   // Distribute weekly rewards (called by admin or cron)
   async distributeWeeklyRewards(week?: string) {
     if (this.paused) {

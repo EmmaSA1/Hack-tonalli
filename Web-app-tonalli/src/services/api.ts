@@ -239,6 +239,12 @@ export const apiService = {
     return res.data;
   },
 
+  // Demo: simulate podium distribution
+  demoPodiumDistribute: async () => {
+    const res = await api.post('/podium/demo-distribute');
+    return res.data;
+  },
+
   // ── Reward History (on-chain) ────────────────────────────────────────
   getRewardHistory: async () => {
     const res = await api.get('/users/me/rewards/history');

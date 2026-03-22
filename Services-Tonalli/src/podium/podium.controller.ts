@@ -49,6 +49,13 @@ export class PodiumController {
     return this.podiumService.distributeWeeklyRewards();
   }
 
+  /** POST /api/podium/demo-distribute — Demo: simulate podium distribution (no admin required) */
+  @UseGuards(JwtAuthGuard)
+  @Post('demo-distribute')
+  demoDistribute(@Req() req: any) {
+    return this.podiumService.demoDistributeRewards(req.user.id);
+  }
+
   /** PATCH /api/podium/pause — Pause rewards (circuit breaker) */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
