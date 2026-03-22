@@ -235,7 +235,7 @@ Términos clave:
 • Hash: Función matemática que genera una huella digital única e irreversible de cualquier dato
 • Nodo: Computador que mantiene una copia completa de la blockchain y valida transacciones
 • Descentralización: Distribución del control entre muchos participantes sin autoridad central`,
-                videoUrl: '',
+                videoUrl: 'https://youtu.be/VXsmLe8wegU',
             }));
             {
                 const existingQs = await questionRepo.count({ where: { moduleId: ch1Mod1.id } });
