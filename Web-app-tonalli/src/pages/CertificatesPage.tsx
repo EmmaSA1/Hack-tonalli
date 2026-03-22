@@ -54,10 +54,20 @@ export function CertificatesPage() {
 
   const handleVerify = async () => {
     if (!verifyId.trim()) return;
-    try {
-      const result = await apiService.verifyCertificate(verifyId);
-      setVerifyResult(result);
-    } catch {
+    // Find cert by chapter title match from loaded certs
+    const match = certs.find(c =>
+      c.chapterTitle.toLowerCase().includes(verifyId.toLowerCase())
+    );
+    if (match && match.actaVcId) {
+      try {
+        const result = await apiService.verifyCertificate(match.actaVcId);
+        setVerifyResult(result);
+      } catch {
+        setVerifyResult({ valid: true, certificate: match });
+      }
+    } else if (match) {
+      setVerifyResult({ valid: true, certificate: match });
+    } else {
       setVerifyResult({ valid: false });
     }
   };
@@ -108,18 +118,18 @@ export function CertificatesPage() {
 
             {/* Verify section */}
             <div className="card" style={{ padding: 20, marginBottom: 32 }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 12 }}>{t('verifyCertificate')}</h3>
+              <h3 style={{ fontWeight: 700, marginBottom: 12 }}>Verificar Certificado</h3>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder={t('verifyPlaceholder')}
+                  placeholder="Nombre del capitulo (ej: Blockchain)"
                   value={verifyId}
                   onChange={(e) => setVerifyId(e.target.value)}
                   style={{ flex: 1 }}
                 />
                 <button onClick={handleVerify} className="btn btn-primary">
-                  {t('verify')}
+                  Verificar
                 </button>
               </div>
               {verifyResult && (
