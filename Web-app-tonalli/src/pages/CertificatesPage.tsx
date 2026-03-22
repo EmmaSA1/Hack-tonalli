@@ -52,25 +52,12 @@ export function CertificatesPage() {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (!verifyId.trim()) return;
-    const match = certs.find(c =>
-      c.chapterTitle.toLowerCase().includes(verifyId.toLowerCase())
-    );
-    if (match) {
-      setVerifyResult({
-        valid: true,
-        certificate: {
-          chapterTitle: match.chapterTitle,
-          examScore: match.examScore,
-          actaVcId: match.actaVcId,
-          txHash: match.txHash,
-          status: match.status,
-          issuedAt: match.issuedAt,
-          stellarExplorerUrl: match.stellarExplorerUrl,
-        },
-      });
-    } else {
+    try {
+      const result = await apiService.verifyCertificate(verifyId.trim());
+      setVerifyResult(result);
+    } catch {
       setVerifyResult({ valid: false });
     }
   };
@@ -126,7 +113,7 @@ export function CertificatesPage() {
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="Nombre del capitulo (ej: Blockchain)"
+                  placeholder="Ingresa el VC ID (ej: vc:tonalli:ch:...)"
                   value={verifyId}
                   onChange={(e) => setVerifyId(e.target.value)}
                   style={{ flex: 1 }}
@@ -184,7 +171,7 @@ export function CertificatesPage() {
                       </div>
                     </div>
                   ) : (
-                    <p style={{ color: '#FF4757', fontWeight: 700 }}>No se encontro certificado para "{verifyId}"</p>
+                    <p style={{ color: '#FF4757', fontWeight: 700 }}>Certificado no encontrado</p>
                   )}
                 </div>
               )}
