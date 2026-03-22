@@ -79,12 +79,13 @@ export class PodiumService {
     await this.scoresRepo.save(score);
   }
 
-  // Get current week's leaderboard (Premium only)
+  // Get current week's leaderboard
   async getWeeklyLeaderboard(userId: string) {
-    const user = await this.usersRepo.findOne({ where: { id: userId } });
-    if (user?.plan === 'free') {
-      throw new ForbiddenException('El podio es exclusivo para usuarios Pro y Max');
-    }
+    // Plan gate disabled for demo
+    // const user = await this.usersRepo.findOne({ where: { id: userId } });
+    // if (user?.plan === 'free') {
+    //   throw new ForbiddenException('El podio es exclusivo para usuarios Pro y Max');
+    // }
 
     const week = this.getCurrentWeek();
     const scores = await this.scoresRepo.find({
@@ -272,8 +273,8 @@ export class PodiumService {
       const user = score.user;
       const rewardUsd = rewardAmounts[i];
 
-      // Check if user has Pro/Max plan (anti-cheat)
-      if (user?.plan === 'free') continue;
+      // Plan gate disabled for demo
+      // if (user?.plan === 'free') continue;
 
       const reward = this.rewardsRepo.create({
         userId: score.userId,

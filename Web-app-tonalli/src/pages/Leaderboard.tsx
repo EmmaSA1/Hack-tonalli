@@ -41,68 +41,8 @@ export function Leaderboard() {
   };
 
   useEffect(() => {
-    if (user?.plan !== 'free') loadData();
-  }, [tab, user?.plan]);
-
-  // Plan gate — show upsell screen for free users
-  if (user?.plan === 'free') {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          style={{
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 20,
-            padding: '48px 36px',
-            maxWidth: 420,
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-          }}
-        >
-          <div style={{ fontSize: '4rem', marginBottom: 16 }}>🏆</div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 12, color: 'var(--text)' }}>
-            {t('weeklyPodium')}
-          </h2>
-          <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 32 }}>
-            El ranking semanal es exclusivo para usuarios Pro y Max. Mejora tu plan para competir por premios reales en XLM.
-          </p>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            marginBottom: 32, padding: '12px 20px',
-            background: 'rgba(255,215,0,0.08)',
-            border: '1px solid rgba(255,215,0,0.2)',
-            borderRadius: 12,
-          }}>
-            <Lock size={16} color="#FFD700" />
-            <span style={{ fontSize: '0.85rem', color: '#FFD700', fontWeight: 600 }}>
-              Exclusivo para planes Pro y Max
-            </span>
-          </div>
-          <button
-            onClick={() => navigate('/premium')}
-            style={{
-              width: '100%',
-              padding: '14px 24px',
-              borderRadius: 12,
-              border: 'none',
-              background: 'linear-gradient(135deg, #F5A623, #E91E8C)',
-              color: '#fff',
-              fontWeight: 800,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              letterSpacing: '0.01em',
-            }}
-          >
-            {t('seePremiumPlans')}
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
+    loadData();
+  }, [tab]);
 
   const loadData = async () => {
     setLoading(true);

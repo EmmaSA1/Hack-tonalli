@@ -95,8 +95,12 @@ export function ChapterFlow() {
     await loadChapter();
     const updated = await apiService.getChapterWithProgress(chapterId!);
     setChapter(updated);
-    if (updated.completionPercent === 75 && user?.plan === 'free') { setShowConversion(true); }
-    else { setView({ step: 'overview' }); }
+    // Auto-unlock final exam at 75% (skip conversion screen for demo)
+    if (updated.completionPercent >= 75) {
+      try { await apiService.unlockFinalExam(chapterId!); } catch {}
+      await loadChapter();
+    }
+    setView({ step: 'overview' });
   };
 
   const handleUnlockExam = async () => {
@@ -521,7 +525,7 @@ export function ChapterFlow() {
                     {/* Locked exam — free user */}
                     {isExam && isLocked && (
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', margin: '6px 0 0', lineHeight: 1.5 }}>
-                        Requiere plan Pro ($2 USD por certificado) o Max (certificados gratis)
+                        Completa los 3 módulos para desbloquear el examen final
                       </p>
                     )}
                   </button>

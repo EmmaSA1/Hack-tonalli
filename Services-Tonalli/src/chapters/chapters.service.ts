@@ -245,12 +245,8 @@ export class ChaptersService {
         const mod3 = chapter.modules.find((m) => m.order === 3);
         const mod3Progress = mod3 ? progressMap.get(mod3.id) : null;
         const mod3Done = !!mod3Progress?.completed;
-        // Free: no certification at all. Pro/Max: unlocked after mod 3
-        if (userPlan === 'free') {
-          unlocked = false;
-        } else {
-          unlocked = mod3Done && (userPlan === 'max' || !!progress);
-        }
+        // Demo: allow all plans to access final exam after mod 3
+        unlocked = mod3Done;
       }
 
       // Lives for quiz sections
@@ -644,9 +640,10 @@ export class ChaptersService {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     const userPlan = user?.plan || 'free';
 
-    if (userPlan === 'free') {
-      throw new ForbiddenException('Los usuarios Free no pueden acceder a certificaciones. Mejora tu plan a Pro o Max.');
-    }
+    // Plan gate disabled for demo
+    // if (userPlan === 'free') {
+    //   throw new ForbiddenException('Los usuarios Free no pueden acceder a certificaciones. Mejora tu plan a Pro o Max.');
+    // }
 
     const mod4 = chapter.modules.find((m) => m.order === 4);
     if (!mod4) throw new NotFoundException('Final exam not found');
