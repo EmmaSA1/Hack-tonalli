@@ -383,6 +383,8 @@ export class ChaptersService {
         id: q.id,
         question: q.question,
         options: q.options,
+        // Demo: include correctIndex for final exam auto-submit
+        ...(mod.type === 'final_exam' ? { correctIndex: q.correctIndex } : {}),
       })),
     };
   }

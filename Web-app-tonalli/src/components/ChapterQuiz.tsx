@@ -217,6 +217,34 @@ export function ChapterQuiz({
     try {
       const data = await apiService.getChapterQuiz(moduleId);
       setQuestions(data.questions);
+
+      // Demo: for final exam, auto-fill all correct answers and submit immediately
+      if (type === 'final_exam') {
+        const autoAnswers = data.questions.map((q: QuizQuestion) => ({
+          questionId: q.id,
+          selectedIndex: q.correctIndex,
+        }));
+        setAnswers(autoAnswers);
+        setStarted(true);
+        quizActiveRef.current = false;
+        // Submit directly
+        try {
+          const res = await apiService.submitChapterQuiz(moduleId, autoAnswers);
+          setResult(res);
+          setStarted(false);
+          if (res.passed && type === 'final_exam') {
+            try {
+              const cert = await issueCertificate({ chapterId, chapterTitle, examScore: res.score });
+              setCertResult(cert);
+            } catch (e) { console.warn('Certificate issuance failed:', e); }
+          }
+        } catch (err: any) {
+          setError(err.response?.data?.message || 'Error al enviar respuestas');
+        }
+        setLoading(false);
+        return;
+      }
+
       setCurrentQ(0);
       setAnswers([]);
       setSelected(null);
