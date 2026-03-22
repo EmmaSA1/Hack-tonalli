@@ -106,14 +106,10 @@ export class ChaptersService {
       let accessible = true;
       let reason = '';
 
-      if (userPlan === 'free') {
-        // Free: only first 3 chapters
-        if (index >= 3) {
-          accessible = false;
-          reason = 'free_limit';
-        }
-      }
-      // Pro and Max: all chapters accessible
+      // Plan gate disabled for demo — all chapters accessible
+      // if (userPlan === 'free') {
+      //   if (index >= 3) { accessible = false; reason = 'free_limit'; }
+      // }
 
       return {
         id: ch.id,
@@ -213,18 +209,12 @@ export class ChaptersService {
     // Check plan-based access
     let chapterAccessible = true;
     let lockedReason: string | null = null;
-    if (userPlan === 'free') {
-      // Free users: only first 3 chapters (by order)
-      const allPublished = await this.chaptersRepo.find({
-        where: { published: true },
-        order: { order: 'ASC' },
-      });
-      const chapterIndex = allPublished.findIndex(ch => ch.id === chapter.id);
-      if (chapterIndex >= 3) {
-        chapterAccessible = false;
-        lockedReason = 'Este capitulo requiere plan Pro o Max. Los usuarios Free solo tienen acceso a los primeros 3 capitulos.';
-      }
-    }
+    // Plan gate disabled for demo — all chapters accessible
+    // if (userPlan === 'free') {
+    //   const allPublished = await this.chaptersRepo.find({ where: { published: true }, order: { order: 'ASC' } });
+    //   const chapterIndex = allPublished.findIndex(ch => ch.id === chapter.id);
+    //   if (chapterIndex >= 3) { chapterAccessible = false; lockedReason = '...'; }
+    // }
 
     const allProgress = await this.progressRepo.find({ where: { chapterId: chapter.id, userId } });
     const progressMap = new Map(allProgress.map((p) => [p.moduleId, p]));
