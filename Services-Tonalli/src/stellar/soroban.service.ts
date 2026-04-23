@@ -31,11 +31,11 @@ export interface RewardUserParams {
 }
 
 export interface MintPodiumNftParams {
-  week: string;           // e.g. "2026-W12"
+  week: string; // e.g. "2026-W12"
   userPublicKey: string;
-  rank: number;           // 1, 2, or 3
+  rank: number; // 1, 2, or 3
   xlmRewardStroops: number;
-  txHash: string;         // XLM reward tx hash
+  txHash: string; // XLM reward tx hash
 }
 
 export interface PodiumNFTData {
@@ -49,7 +49,7 @@ export interface PodiumNFTData {
 
 export interface RewardHistoryEntry {
   lessonId: string;
-  amount: number;    // stroops
+  amount: number; // stroops
   timestamp: number;
 }
 
@@ -79,14 +79,17 @@ export class SorobanService {
   private tokenContractId: string;
   private podiumNftContractId: string;
 
+  /** Explicit mock mode flag — set via SOROBAN_MOCK_MODE env var */
+  private isMockMode: boolean;
+
   constructor(private configService: ConfigService) {
     const horizonUrl =
-      this.configService.get('STELLAR_SOROBAN_URL') ||
+      this.configService.get<string>('STELLAR_SOROBAN_URL') ||
       'https://soroban-testnet.stellar.org';
 
     this.rpc = new SorobanRpc.Server(horizonUrl, { allowHttp: false });
 
-    const adminSecret = this.configService.get('STELLAR_ADMIN_SECRET');
+    const adminSecret = this.configService.get<string>('STELLAR_ADMIN_SECRET');
     if (adminSecret) {
       this.adminKeypair = Keypair.fromSecret(adminSecret);
     } else {
@@ -97,17 +100,67 @@ export class SorobanService {
       );
     }
 
-    this.network = this.configService.get('STELLAR_NETWORK') || 'testnet';
+    this.network =
+      this.configService.get<string>('STELLAR_NETWORK') || 'testnet';
     this.networkPassphrase =
       this.network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET;
 
-    this.nftContractId = this.configService.get('NFT_CONTRACT_ID') || '';
+    this.nftContractId =
+      this.configService.get<string>('NFT_CONTRACT_ID') || '';
     this.rewardsContractId =
-      this.configService.get('REWARDS_CONTRACT_ID') || '';
+      this.configService.get<string>('REWARDS_CONTRACT_ID') || '';
     this.tokenContractId =
-      this.configService.get('TOKEN_CONTRACT_ID') || '';
+      this.configService.get<string>('TOKEN_CONTRACT_ID') || '';
     this.podiumNftContractId =
-      this.configService.get('PODIUM_NFT_CONTRACT_ID') || '';
+      this.configService.get<string>('PODIUM_NFT_CONTRACT_ID') || '';
+
+    this.isMockMode = this.resolveMockMode();
+  }
+
+  /**
+   * Resolve whether mock mode is active and emit a clear startup log.
+   *
+   * Resolution order:
+   *  1. SOROBAN_MOCK_MODE=true|false  → explicit, takes precedence
+   *  2. Any contract ID missing       → implicit mock (backward-compat)
+   */
+  private resolveMockMode(): boolean {
+    const mockModeEnv = this.configService.get<string>('SOROBAN_MOCK_MODE');
+
+    const resolved =
+      mockModeEnv !== undefined
+        ? mockModeEnv === 'true'
+        : !this.areContractIdsConfigured();
+
+    if (resolved) {
+      this.logger.warn('[SorobanService] Running in MOCK mode');
+    } else {
+      this.logger.log(
+        `[SorobanService] Running in LIVE mode (network: ${this.network})`,
+      );
+    }
+
+    return resolved;
+  }
+
+  /** Returns true only when every contract ID is non-empty */
+  private areContractIdsConfigured(): boolean {
+    return !!(
+      this.nftContractId &&
+      this.rewardsContractId &&
+      this.tokenContractId &&
+      this.podiumNftContractId
+    );
+  }
+
+  /** Returns the names of any contract IDs that are not configured */
+  private getMissingContractIds(): string[] {
+    const missing: string[] = [];
+    if (!this.nftContractId) missing.push('NFT_CONTRACT_ID');
+    if (!this.rewardsContractId) missing.push('REWARDS_CONTRACT_ID');
+    if (!this.tokenContractId) missing.push('TOKEN_CONTRACT_ID');
+    if (!this.podiumNftContractId) missing.push('PODIUM_NFT_CONTRACT_ID');
+    return missing;
   }
 
   // ── NFT Certificate ────────────────────────────────────────────────────────
@@ -221,7 +274,10 @@ export class SorobanService {
   /**
    * Verifica si un usuario tiene el certificado de una lección específica
    */
-  async hasCertificate(userPublicKey: string, lessonId: string): Promise<boolean> {
+  async hasCertificate(
+    userPublicKey: string,
+    lessonId: string,
+  ): Promise<boolean> {
     if (!this.nftContractId) return false;
 
     try {
@@ -426,7 +482,10 @@ export class SorobanService {
   /**
    * Get a podium NFT for a given week and user
    */
-  async getPodiumNft(week: string, userPublicKey: string): Promise<PodiumNFTData | null> {
+  async getPodiumNft(
+    week: string,
+    userPublicKey: string,
+  ): Promise<PodiumNFTData | null> {
     if (!this.podiumNftContractId) return null;
 
     try {
@@ -535,7 +594,10 @@ export class SorobanService {
   /**
    * Check if a lesson was already rewarded on-chain (anti-double-claim)
    */
-  async isLessonRewarded(userPublicKey: string, lessonId: string): Promise<boolean> {
+  async isLessonRewarded(
+    userPublicKey: string,
+    lessonId: string,
+  ): Promise<boolean> {
     if (!this.rewardsContractId) return false;
 
     try {
@@ -559,8 +621,12 @@ export class SorobanService {
   /**
    * Construye, simula y envía una transacción Soroban
    */
-  private async submitSorobanTransaction(operation: xdr.Operation): Promise<string> {
-    const adminAccount = await this.rpc.getAccount(this.adminKeypair.publicKey());
+  private async submitSorobanTransaction(
+    operation: xdr.Operation,
+  ): Promise<string> {
+    const adminAccount = await this.rpc.getAccount(
+      this.adminKeypair.publicKey(),
+    );
 
     const tx = new TransactionBuilder(adminAccount, {
       fee: BASE_FEE,
@@ -582,7 +648,9 @@ export class SorobanService {
 
     const sendResult = await this.rpc.sendTransaction(preparedTx);
     if (sendResult.status === 'ERROR') {
-      throw new Error(`Transaction failed: ${JSON.stringify(sendResult.errorResult)}`);
+      throw new Error(
+        `Transaction failed: ${JSON.stringify(sendResult.errorResult)}`,
+      );
     }
 
     // Esperar confirmación
@@ -595,7 +663,9 @@ export class SorobanService {
   private async simulateSorobanCall(
     operation: xdr.Operation,
   ): Promise<xdr.ScVal | null> {
-    const adminAccount = await this.rpc.getAccount(this.adminKeypair.publicKey());
+    const adminAccount = await this.rpc.getAccount(
+      this.adminKeypair.publicKey(),
+    );
 
     const tx = new TransactionBuilder(adminAccount, {
       fee: BASE_FEE,
@@ -611,14 +681,18 @@ export class SorobanService {
       return null;
     }
 
-    const successResult = simResult as SorobanRpc.Api.SimulateTransactionSuccessResponse;
+    const successResult =
+      simResult as SorobanRpc.Api.SimulateTransactionSuccessResponse;
     return successResult.result?.retval ?? null;
   }
 
   /**
    * Espera a que una transacción sea confirmada en el ledger
    */
-  private async waitForTransaction(hash: string, maxWait = 30): Promise<string> {
+  private async waitForTransaction(
+    hash: string,
+    maxWait = 30,
+  ): Promise<string> {
     let attempts = 0;
     while (attempts < maxWait) {
       const result = await this.rpc.getTransaction(hash);
@@ -639,10 +713,10 @@ export class SorobanService {
     if (result.status !== SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
       throw new Error('Transaction not successful');
     }
-    const successResult = result as SorobanRpc.Api.GetSuccessfulTransactionResponse;
+    const successResult =
+      result as SorobanRpc.Api.GetSuccessfulTransactionResponse;
     return successResult.returnValue!;
   }
-
 
   // ── Mock Responses (para demo sin contratos desplegados) ──────────────────
 
