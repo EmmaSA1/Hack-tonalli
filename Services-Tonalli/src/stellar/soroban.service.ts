@@ -123,8 +123,13 @@ export class SorobanService {
    * Resolution order:
    *  1. SOROBAN_MOCK_MODE=true|false  → explicit, takes precedence
    *  2. Any contract ID missing       → implicit mock (backward-compat)
+   *
+   * Fail-fast rules:
+   *  - NODE_ENV=production + mock active  → throw (never silently mock in prod)
+   *  - SOROBAN_MOCK_MODE=false + missing contracts → throw (misconfiguration)
    */
   private resolveMockMode(): boolean {
+    const nodeEnv = this.configService.get<string>('NODE_ENV') || 'development';
     const mockModeEnv = this.configService.get<string>('SOROBAN_MOCK_MODE');
 
     const resolved =
@@ -132,11 +137,42 @@ export class SorobanService {
         ? mockModeEnv === 'true'
         : !this.areContractIdsConfigured();
 
+    const missing = this.getMissingContractIds();
+
+    // Block mock mode in production — fail fast
+    if (nodeEnv === 'production' && resolved) {
+      const msg =
+        `[SorobanService] FATAL: Mock mode is not allowed in production. ` +
+        `Missing contract IDs: ${missing.join(', ')}`;
+      this.logger.error(msg);
+      throw new Error(msg);
+    }
+
+    // Explicit opt-out of mock mode requires all contracts to be present
+    if (mockModeEnv === 'false' && missing.length > 0) {
+      const msg =
+        `[SorobanService] FATAL: SOROBAN_MOCK_MODE=false but required ` +
+        `contract IDs are missing: ${missing.join(', ')}`;
+      this.logger.error(msg);
+      throw new Error(msg);
+    }
+
     if (resolved) {
       this.logger.warn('[SorobanService] Running in MOCK mode');
+      if (missing.length > 0) {
+        this.logger.warn(
+          `[SorobanService] Missing contract IDs: ${missing.join(', ')}`,
+        );
+      }
     } else {
       this.logger.log(
         `[SorobanService] Running in LIVE mode (network: ${this.network})`,
+      );
+      this.logger.log(
+        `[SorobanService] Contracts — NFT: ${!!this.nftContractId}, ` +
+          `Rewards: ${!!this.rewardsContractId}, ` +
+          `Token: ${!!this.tokenContractId}, ` +
+          `Podium: ${!!this.podiumNftContractId}`,
       );
     }
 
