@@ -251,7 +251,9 @@ export class StellarService {
       transaction.sign(adminKeypair);
       const result = await this.server.submitTransaction(transaction);
 
-      this.logger.log(`NFT minted (admin) for lesson ${lessonId}: ${result.hash}`);
+      this.logger.log(
+        `NFT minted (admin) for lesson ${lessonId}: ${result.hash}`,
+      );
       return {
         success: true,
         txHash: result.hash,
@@ -277,5 +279,67 @@ export class StellarService {
       return result.success;
     }
     return true;
+  }
+
+  /**
+   * Build an unsigned XDR transaction for external wallet signing.
+   * Used for Freighter and other external signers.
+   */
+  async buildUnsignedXDR(
+    fromPublicKey: string,
+    toPublicKey: string,
+    amount: string,
+    memo?: string,
+  ): Promise<{ xdr: string; error?: string }> {
+    try {
+      const sourceAccount = await this.server.loadAccount(fromPublicKey);
+
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: StellarSdk.BASE_FEE,
+        networkPassphrase: this.networkPassphrase,
+      })
+        .addOperation(
+          StellarSdk.Operation.payment({
+            destination: toPublicKey,
+            asset: StellarSdk.Asset.native(),
+            amount: amount,
+          }),
+        )
+        .addMemo(StellarSdk.Memo.text(memo || 'Tonalli XLM Transfer'))
+        .setTimeout(60)
+        .build();
+
+      // Return unsigned XDR
+      const xdr = transaction.toXDR();
+      this.logger.log(
+        `Built unsigned XDR for ${fromPublicKey} → ${toPublicKey}`,
+      );
+      return { xdr };
+    } catch (error) {
+      this.logger.error(`Failed to build unsigned XDR: ${error.message}`);
+      return { xdr: '', error: error.message };
+    }
+  }
+
+  /**
+   * Submit a pre-signed XDR transaction to Stellar.
+   * Used after external wallet (Freighter) signs the transaction.
+   */
+  async submitSignedXDR(
+    signedXDR: string,
+  ): Promise<{ success: boolean; txHash?: string; error?: string }> {
+    try {
+      const transaction = StellarSdk.TransactionBuilder.fromXDR(
+        signedXDR,
+        this.networkPassphrase,
+      );
+
+      const result = await this.server.submitTransaction(transaction);
+      this.logger.log(`Submitted signed XDR: ${result.hash}`);
+      return { success: true, txHash: result.hash };
+    } catch (error) {
+      this.logger.error(`Failed to submit signed XDR: ${error.message}`);
+      return { success: false, error: error.message };
+    }
   }
 }
