@@ -210,8 +210,8 @@ export class SorobanService {
     txHash: string;
     contractId: string;
   }> {
-    if (!this.nftContractId) {
-      this.logger.warn('NFT_CONTRACT_ID not set — using mock response');
+    if (this.isMockMode) {
+      this.logger.debug('Using mock response for mintCertificate');
       return this.mockMintCertificate(params);
     }
 
@@ -254,7 +254,7 @@ export class SorobanService {
    * Obtiene los datos de un certificado NFT por su token_id
    */
   async getCertificate(tokenId: number): Promise<CertificateData | null> {
-    if (!this.nftContractId) return null;
+    if (this.isMockMode) return null;
 
     try {
       const contract = new Contract(this.nftContractId);
@@ -266,17 +266,17 @@ export class SorobanService {
       const result = await this.simulateSorobanCall(operation);
       if (!result) return null;
 
-      const native = scValToNative(result) as any;
+      const native = scValToNative(result) as Record<string, unknown>;
       return {
-        tokenId: Number(native.token_id),
-        owner: native.owner,
-        lessonId: native.lesson_id,
-        moduleId: native.module_id,
-        username: native.username,
-        score: native.score,
-        xpEarned: native.xp_earned,
-        issuedAt: Number(native.issued_at),
-        metadataUri: native.metadata_uri,
+        tokenId: Number(native['token_id']),
+        owner: native['owner'] as string,
+        lessonId: native['lesson_id'] as string,
+        moduleId: native['module_id'] as string,
+        username: native['username'] as string,
+        score: native['score'] as number,
+        xpEarned: native['xp_earned'] as number,
+        issuedAt: Number(native['issued_at']),
+        metadataUri: native['metadata_uri'] as string,
       };
     } catch (error) {
       this.logger.error('Failed to get certificate', error);
@@ -288,7 +288,7 @@ export class SorobanService {
    * Obtiene todos los token_ids de certificados de un usuario
    */
   async getUserCertificates(userPublicKey: string): Promise<number[]> {
-    if (!this.nftContractId) return [];
+    if (this.isMockMode) return [];
 
     try {
       const contract = new Contract(this.nftContractId);
@@ -314,7 +314,7 @@ export class SorobanService {
     userPublicKey: string,
     lessonId: string,
   ): Promise<boolean> {
-    if (!this.nftContractId) return false;
+    if (this.isMockMode) return false;
 
     try {
       const contract = new Contract(this.nftContractId);
@@ -343,8 +343,8 @@ export class SorobanService {
     amountStroops: number;
     txHash: string;
   }> {
-    if (!this.rewardsContractId) {
-      this.logger.warn('REWARDS_CONTRACT_ID not set — using mock response');
+    if (this.isMockMode) {
+      this.logger.debug('Using mock response for rewardUser');
       return this.mockRewardUser(params);
     }
 
@@ -392,8 +392,8 @@ export class SorobanService {
     toPublicKey: string,
     amount: number,
   ): Promise<{ success: boolean; txHash: string; amount: number }> {
-    if (!this.tokenContractId) {
-      this.logger.warn('TOKEN_CONTRACT_ID not set — using mock response');
+    if (this.isMockMode) {
+      this.logger.debug('Using mock response for mintTokens');
       return this.mockMintTokens(toPublicKey, amount);
     }
 
@@ -426,9 +426,7 @@ export class SorobanService {
    * Get TNL token balance for a user.
    */
   async getTokenBalance(publicKey: string): Promise<number> {
-    if (!this.tokenContractId) {
-      return 0;
-    }
+    if (this.isMockMode) return 0;
 
     try {
       const contract = new Contract(this.tokenContractId);
@@ -452,9 +450,7 @@ export class SorobanService {
    * Initialize the TNL token contract (call once after deploy).
    */
   async initializeToken(): Promise<{ success: boolean; txHash?: string }> {
-    if (!this.tokenContractId) {
-      return { success: false };
-    }
+    if (this.isMockMode) return { success: false };
 
     try {
       const contract = new Contract(this.tokenContractId);
@@ -485,8 +481,8 @@ export class SorobanService {
     success: boolean;
     txHash: string;
   }> {
-    if (!this.podiumNftContractId) {
-      this.logger.warn('PODIUM_NFT_CONTRACT_ID not set — using mock response');
+    if (this.isMockMode) {
+      this.logger.debug('Using mock response for mintPodiumNft');
       return this.mockMintPodiumNft(params);
     }
 
@@ -522,7 +518,7 @@ export class SorobanService {
     week: string,
     userPublicKey: string,
   ): Promise<PodiumNFTData | null> {
-    if (!this.podiumNftContractId) return null;
+    if (this.isMockMode) return null;
 
     try {
       const contract = new Contract(this.podiumNftContractId);
@@ -535,16 +531,16 @@ export class SorobanService {
       const result = await this.simulateSorobanCall(operation);
       if (!result) return null;
 
-      const native = scValToNative(result) as any;
+      const native = scValToNative(result) as Record<string, unknown>;
       if (!native) return null;
 
       return {
-        rank: native.rank,
-        xlmReward: Number(native.xlm_reward),
-        week: native.week,
-        txHash: native.tx_hash,
-        issuedAt: Number(native.issued_at),
-        owner: native.owner,
+        rank: native['rank'] as number,
+        xlmReward: Number(native['xlm_reward']),
+        week: native['week'] as string,
+        txHash: native['tx_hash'] as string,
+        issuedAt: Number(native['issued_at']),
+        owner: native['owner'] as string,
       };
     } catch (error) {
       this.logger.error('Failed to get podium NFT', error);
@@ -556,7 +552,7 @@ export class SorobanService {
    * Check if a user has a podium NFT for a given week
    */
   async hasPodiumNft(week: string, userPublicKey: string): Promise<boolean> {
-    if (!this.podiumNftContractId) return false;
+    if (this.isMockMode) return false;
 
     try {
       const contract = new Contract(this.podiumNftContractId);
@@ -580,7 +576,7 @@ export class SorobanService {
    * Get the on-chain reward history for a user
    */
   async getRewardHistory(userPublicKey: string): Promise<RewardHistoryEntry[]> {
-    if (!this.rewardsContractId) return [];
+    if (this.isMockMode) return [];
 
     try {
       const contract = new Contract(this.rewardsContractId);
@@ -592,11 +588,11 @@ export class SorobanService {
       const result = await this.simulateSorobanCall(operation);
       if (!result) return [];
 
-      const native = scValToNative(result) as any[];
-      return native.map((r: any) => ({
-        lessonId: r.lesson_id,
-        amount: Number(r.amount),
-        timestamp: Number(r.timestamp),
+      const native = scValToNative(result) as Array<Record<string, unknown>>;
+      return native.map((r) => ({
+        lessonId: r['lesson_id'] as string,
+        amount: Number(r['amount']),
+        timestamp: Number(r['timestamp']),
       }));
     } catch (error) {
       this.logger.error('Failed to get reward history', error);
@@ -608,7 +604,7 @@ export class SorobanService {
    * Get total XLM rewards (in stroops) for a user from the contract
    */
   async getUserTotalRewards(userPublicKey: string): Promise<number> {
-    if (!this.rewardsContractId) return 0;
+    if (this.isMockMode) return 0;
 
     try {
       const contract = new Contract(this.rewardsContractId);
@@ -634,7 +630,7 @@ export class SorobanService {
     userPublicKey: string,
     lessonId: string,
   ): Promise<boolean> {
-    if (!this.rewardsContractId) return false;
+    if (this.isMockMode) return false;
 
     try {
       const contract = new Contract(this.rewardsContractId);
@@ -749,21 +745,26 @@ export class SorobanService {
     if (result.status !== SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
       throw new Error('Transaction not successful');
     }
-    const successResult =
-      result as SorobanRpc.Api.GetSuccessfulTransactionResponse;
-    return successResult.returnValue!;
+    if (!('returnValue' in result) || !result.returnValue) {
+      throw new Error('Transaction returned no value');
+    }
+    return result.returnValue;
   }
 
   // ── Mock Responses (para demo sin contratos desplegados) ──────────────────
 
-  private async mockMintCertificate(params: MintCertificateParams) {
+  private mockMintCertificate(params: MintCertificateParams): {
+    tokenId: number;
+    txHash: string;
+    contractId: string;
+  } {
     const tokenId = Math.floor(Math.random() * 9000) + 1000;
     const txHash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16),
     ).join('');
 
     this.logger.log(
-      `[MOCK] NFT Certificate minted: token_id=${tokenId}, tx=${txHash}`,
+      `[MOCK] NFT Certificate minted: token_id=${tokenId}, lesson=${params.lessonId}, tx=${txHash}`,
     );
 
     return {
@@ -773,7 +774,10 @@ export class SorobanService {
     };
   }
 
-  private async mockMintTokens(toPublicKey: string, amount: number) {
+  private mockMintTokens(
+    toPublicKey: string,
+    amount: number,
+  ): { success: boolean; txHash: string; amount: number } {
     const txHash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16),
     ).join('');
@@ -785,7 +789,10 @@ export class SorobanService {
     return { success: true, txHash, amount };
   }
 
-  private async mockMintPodiumNft(params: MintPodiumNftParams) {
+  private mockMintPodiumNft(params: MintPodiumNftParams): {
+    success: boolean;
+    txHash: string;
+  } {
     const txHash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16),
     ).join('');
@@ -797,7 +804,11 @@ export class SorobanService {
     return { success: true, txHash };
   }
 
-  private async mockRewardUser(params: RewardUserParams) {
+  private mockRewardUser(params: RewardUserParams): {
+    amountXlm: number;
+    amountStroops: number;
+    txHash: string;
+  } {
     const bonus = params.score === 100 ? params.amountXlm * 0.1 : 0;
     const finalXlm = params.amountXlm + bonus;
     const txHash = Array.from({ length: 64 }, () =>
