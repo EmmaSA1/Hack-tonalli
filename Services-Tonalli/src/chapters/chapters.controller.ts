@@ -30,6 +30,22 @@ export class ChaptersController {
     return this.chaptersService.findAll();
   }
 
+  /** GET /api/chapters/admin/metrics — platform metrics */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Get('admin/metrics')
+  getMetrics() {
+    return this.chaptersService.getAdminMetrics();
+  }
+
+  /** PATCH /api/chapters/admin/reorder — bulk reorder chapters */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @Patch('admin/reorder')
+  reorderChapters(@Body() body: { orders: { id: string; order: number }[] }) {
+    return this.chaptersService.reorderChapters(body.orders);
+  }
+
   // ── Module routes (must be before :id to avoid conflict) ─────────────────
 
   /** GET /api/chapters/modules/:moduleId/content */
