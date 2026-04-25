@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ActaCertificate } from './entities/acta-certificate.entity';
 import { User } from '../users/entities/user.entity';
 import { ActaService } from '../acta/acta.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CertificatesService {
@@ -15,6 +16,7 @@ export class CertificatesService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly actaService: ActaService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // Issue a real ACTA verifiable credential and store in DB
@@ -46,6 +48,13 @@ export class CertificatesService {
     this.logger.log(
       `[ACTA] Certificate issued: vcId=${vcId}, txId=${txId}, user=${data.userId}`,
     );
+
+    // Send notification to user
+    await this.notificationsService.notifyCertificateIssued(data.userId, {
+      title: data.chapterTitle,
+      txHash: txId,
+      vcId: vcId,
+    });
 
     return {
       id: saved.id,
@@ -113,7 +122,9 @@ export class CertificatesService {
     if (!cert) throw new NotFoundException('Certificate not found');
 
     // Also verify on-chain via ACTA
-    let onChainStatus: { status: string; since?: string } = { status: 'unknown' };
+    let onChainStatus: { status: string; since?: string } = {
+      status: 'unknown',
+    };
     try {
       onChainStatus = await this.actaService.verifyCredential(actaVcId);
     } catch {
