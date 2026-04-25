@@ -26,6 +26,7 @@ import { Quiz } from './lessons/entities/quiz.entity';
 import { Progress } from './progress/entities/progress.entity';
 import { NFTCertificate } from './progress/entities/nft-certificate.entity';
 import { Streak } from './users/entities/streak.entity';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
 
 @Module({
   imports: [
@@ -42,8 +43,23 @@ import { Streak } from './users/entities/streak.entity';
         username: process.env.DB_USER || 'root',
         password: process.env.DB_PASS || '',
         database: process.env.DB_NAME || 'tonalli',
-        entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
+        entities: [
+          User,
+          Lesson,
+          Quiz,
+          Progress,
+          NFTCertificate,
+          Streak,
+          Chapter,
+          ChapterModuleEntity,
+          ChapterProgress,
+          ChapterQuestion,
+          WeeklyScore,
+          PodiumReward,
+          ActaCertificate,
+          RefreshToken,
+        ],
+        synchronize: true, // crea/actualiza tablas automáticamente
         logging: false,
         charset: 'utf8mb4',
       }),
