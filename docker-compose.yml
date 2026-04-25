@@ -1,0 +1,109 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: tonalli-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-tonalli}
+      POSTGRES_PASSWORD: ${DB_PASS:-tonalli_password}
+      POSTGRES_DB: ${DB_NAME:-tonalli}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-tonalli}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tonalli-network
+
+  # Redis for caching and throttling
+  redis:
+    image: redis:7-alpine
+    container_name: tonalli-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tonalli-network
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: ./Services-Tonalli
+      dockerfile: Dockerfile
+    container_name: tonalli-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${BACKEND_PORT:-3001}
+      DB_TYPE: ${DB_TYPE:-postgres}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-tonalli}
+      DB_PASS: ${DB_PASS:-tonalli_password}
+      DB_NAME: ${DB_NAME:-tonalli}
+      DB_LOGGING: ${DB_LOGGING:-false}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
+      STELLAR_HORIZON_URL: ${STELLAR_HORIZON_URL:-https://horizon-testnet.stellar.org}
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    volumes:
+      - ./Services-Tonalli:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tonalli-network
+    command: npm run start:prod
+
+  # Web Frontend (React + Vite)
+  web:
+    build:
+      context: ./Web-app-tonalli
+      dockerfile: Dockerfile
+    container_name: tonalli-web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+      VITE_STELLAR_NETWORK: ${VITE_STELLAR_NETWORK:-testnet}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./Web-app-tonalli:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - tonalli-network
+    command: npm run preview
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  tonalli-network:
+    driver: bridge
