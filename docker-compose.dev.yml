@@ -1,0 +1,47 @@
+version: "3.8"
+
+# Development overrides for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Backend with hot-reload
+  backend:
+    build:
+      context: ./Services-Tonalli
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./Services-Tonalli:/app
+      - /app/node_modules
+      - /app/dist
+    command: npm run start:dev
+    stdin_open: true
+    tty: true
+
+  # Web with hot-reload
+  web:
+    build:
+      context: ./Web-app-tonalli
+      dockerfile: Dockerfile.dev
+      target: development
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./Web-app-tonalli:/app
+      - /app/node_modules
+      - /app/dist
+    command: npm run dev -- --host 0.0.0.0
+    stdin_open: true
+    tty: true
+
+  # PostgreSQL with exposed logs for debugging
+  postgres:
+    command: postgres -c log_statement=all -c log_destination=stderr
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust # Only for development!
+
+  # Redis with verbose logging
+  redis:
+    command: redis-server --appendonly yes --loglevel verbose

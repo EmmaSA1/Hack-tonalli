@@ -35,18 +35,51 @@ import { Streak } from './users/entities/streak.entity';
     }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
-      useFactory: () => ({
-        type: 'mysql',
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '3306'),
-        username: process.env.DB_USER || 'root',
-        password: process.env.DB_PASS || '',
-        database: process.env.DB_NAME || 'tonalli',
-        entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
-        logging: false,
-        charset: 'utf8mb4',
-      }),
+      useFactory: () => {
+        const dbType = (process.env.DB_TYPE || 'postgres') as
+          | 'postgres'
+          | 'mysql';
+        const baseConfig = {
+          host: process.env.DB_HOST || 'localhost',
+          port: parseInt(
+            process.env.DB_PORT || (dbType === 'postgres' ? '5432' : '3306'),
+          ),
+          username:
+            process.env.DB_USER || (dbType === 'postgres' ? 'tonalli' : 'root'),
+          password: process.env.DB_PASS || '',
+          database: process.env.DB_NAME || 'tonalli',
+          entities: [
+            User,
+            Lesson,
+            Quiz,
+            Progress,
+            NFTCertificate,
+            Streak,
+            Chapter,
+            ChapterModuleEntity,
+            ChapterProgress,
+            ChapterQuestion,
+            WeeklyScore,
+            PodiumReward,
+            ActaCertificate,
+          ],
+          synchronize: true, // crea/actualiza tablas automáticamente
+          logging: process.env.DB_LOGGING === 'true',
+        };
+
+        if (dbType === 'postgres') {
+          return {
+            type: 'postgres',
+            ...baseConfig,
+          };
+        } else {
+          return {
+            type: 'mysql',
+            ...baseConfig,
+            charset: 'utf8mb4',
+          };
+        }
+      },
     }),
     AuthModule,
     UsersModule,
