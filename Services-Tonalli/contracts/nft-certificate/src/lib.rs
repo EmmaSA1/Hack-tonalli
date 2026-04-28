@@ -113,6 +113,11 @@ impl NftCertificateContract {
             panic!("Score must be between 0 and 100");
         }
 
+        // Prevenir duplicados (anti-double-mint) para la misma lección
+        if Self::has_certificate(env.clone(), to.clone(), lesson_id.clone()) {
+            panic!("Certificate already minted for this lesson");
+        }
+
         // Incrementar contador de tokens
         let mut counter: u64 = env.storage().instance().get(&COUNTER_KEY)
             .unwrap_or(0);
@@ -256,6 +261,10 @@ mod tests {
         assert_eq!(cert.owner, user);
         assert_eq!(cert.score, 85);
         assert_eq!(cert.xp_earned, 50);
+
+        // Verificar que se emitió el evento
+        let events = env.events().all();
+        assert!(!events.is_empty());
     }
 
     #[test]
@@ -336,5 +345,73 @@ mod tests {
             &50,
             &String::from_str(&env, "ipfs://x"),
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "Certificate already minted for this lesson")]
+    fn test_duplicate_mint_fails() {
+        let (env, client) = create_test_env();
+        let admin = Address::generate(&env);
+        let user = Address::generate(&env);
+        client.initialize(&admin);
+
+        let lesson_id = String::from_str(&env, "lesson-01");
+        
+        client.mint(
+            &user,
+            &lesson_id,
+            &String::from_str(&env, "module-01"),
+            &String::from_str(&env, "user"),
+            &90,
+            &50,
+            &String::from_str(&env, "ipfs://x"),
+        );
+
+        // El segundo intento de emitir para la misma lección debe fallar
+        client.mint(
+            &user,
+            &lesson_id,
+            &String::from_str(&env, "module-01"),
+            &String::from_str(&env, "user"),
+            &90,
+            &50,
+            &String::from_str(&env, "ipfs://x"),
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_unauthorized_mint_fails() {
+        // En este test no usamos create_test_env porque mockea todas las autorizaciones.
+        let env = Env::default();
+        let contract_id = env.register_contract(None, NftCertificateContract);
+        let client = NftCertificateContractClient::new(&env, &contract_id);
+        
+        let admin = Address::generate(&env);
+        let user = Address::generate(&env);
+        
+        client.initialize(&admin);
+
+        // Al no proveer la firma del admin, la llamada fallará (Unauthorized HostError)
+        client.mint(
+            &user,
+            &String::from_str(&env, "lesson-01"),
+            &String::from_str(&env, "module-01"),
+            &String::from_str(&env, "user"),
+            &90,
+            &50,
+            &String::from_str(&env, "ipfs://x"),
+        );
+    }
+
+    #[test]
+    fn test_transfer_admin() {
+        let (env, client) = create_test_env();
+        let admin = Address::generate(&env);
+        let new_admin = Address::generate(&env);
+        client.initialize(&admin);
+        
+        client.transfer_admin(&new_admin);
+        assert_eq!(client.admin(), new_admin);
     }
 }
