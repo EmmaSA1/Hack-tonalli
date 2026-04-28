@@ -25,6 +25,10 @@ interface QuizResult {
   xpEarned: number;
   xlmReward: { amount: string; txHash?: string } | null;
   nftCertificate: { id: string; txHash: string; assetCode: string; status: string } | null;
+  rewardsStatus?: 'none' | 'queued' | 'processing' | 'completed' | 'failed';
+  rewardsRetryCount?: number;
+  rewardsJobId?: string | null;
+  rewardsError?: string | null;
   message: string;
 }
 
@@ -64,6 +68,33 @@ export function Quiz() {
       setGameState('playing');
     });
   }, [lessonId]);
+
+  useEffect(() => {
+    if (!lessonId || !result?.passed) return;
+    if (result.rewardsStatus === 'completed' || result.rewardsStatus === 'failed') return;
+
+    const timer = window.setInterval(async () => {
+      try {
+        const status = await apiService.getQuizRewardStatus(lessonId);
+        setResult((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            rewardsStatus: status.rewardsStatus,
+            rewardsRetryCount: status.rewardsRetryCount,
+            rewardsJobId: status.rewardsJobId,
+            rewardsError: status.rewardsError,
+            xlmReward: status.xlmReward,
+            nftCertificate: status.nftCertificate,
+          };
+        });
+      } catch {
+        // Ignore transient polling errors
+      }
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [lessonId, result?.passed, result?.rewardsStatus]);
 
   const currentQuestion = questions[currentQ];
   const progress = questions.length > 0 ? ((currentQ) / questions.length) * 100 : 0;
@@ -120,7 +151,7 @@ export function Quiz() {
           setUser({
             ...user,
             xp: user.xp + (data.xpEarned || 0),
-            xlmEarned: (user.xlmEarned || 0) + parseFloat(data.xlmReward?.amount || '0'),
+            xlmEarned: (user.xlmEarned || 0),
             lessonsCompleted: (user.lessonsCompleted || 0) + 1,
           });
         }
@@ -260,7 +291,31 @@ export function Quiz() {
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{result.nftCertificate.status}</div>
                 </div>
               )}
+              {(result.rewardsStatus === 'queued' || result.rewardsStatus === 'processing') && (
+                <div style={{
+                  background: 'rgba(80,120,255,0.1)', border: '1px solid rgba(80,120,255,0.35)',
+                  borderRadius: 12, padding: '12px 20px', textAlign: 'center',
+                }}>
+                  <span style={{ fontSize: '1.25rem', display: 'block', marginBottom: 4 }}>...</span>
+                  <div style={{ fontWeight: 900, color: '#5078FF', fontSize: '0.9rem' }}>Recompensas</div>
+                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Procesando en segundo plano</div>
+                </div>
+              )}
             </div>
+
+            {result.rewardsStatus === 'failed' && (
+              <div style={{
+                background: 'rgba(200,39,26,0.08)',
+                border: '1px solid rgba(200,39,26,0.35)',
+                borderRadius: 12,
+                padding: '12px 16px',
+                marginBottom: 16,
+                fontSize: '0.85rem',
+                color: 'var(--danger)',
+              }}>
+                La entrega de recompensas fallo tras reintentos. El equipo fue notificado.
+              </div>
+            )}
 
             {/* NFT / Stellar tx notification */}
             {result.nftCertificate && (

@@ -111,6 +111,11 @@ export const apiService = {
     return res.data;
   },
 
+  getQuizRewardStatus: async (lessonId: string) => {
+    const res = await api.get(`/progress/rewards/${lessonId}/status`);
+    return res.data;
+  },
+
   // ── Chapters (new system) ───────────────────────────────────────────────
   getChapters: async () => {
     const res = await api.get('/chapters');

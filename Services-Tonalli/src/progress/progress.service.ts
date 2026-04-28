@@ -1,13 +1,17 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { Progress } from './entities/progress.entity';
 import { NFTCertificate } from './entities/nft-certificate.entity';
 import { UsersService } from '../users/users.service';
-import { StellarService } from '../stellar/stellar.service';
-import { SorobanService } from '../stellar/soroban.service';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { Quiz } from '../lessons/entities/quiz.entity';
+import {
+  PROCESS_QUIZ_REWARDS_JOB,
+  REWARDS_QUEUE,
+} from './constants/rewards-queue.constants';
 
 export interface QuizQuestion {
   id: string;
@@ -25,8 +29,6 @@ function normalizeQuestionsPool(pool: unknown): QuizQuestion[] {
 
 @Injectable()
 export class ProgressService {
-  private readonly logger = new Logger(ProgressService.name);
-
   constructor(
     @InjectRepository(Progress)
     private readonly progressRepository: Repository<Progress>,
@@ -37,8 +39,8 @@ export class ProgressService {
     @InjectRepository(Quiz)
     private readonly quizRepository: Repository<Quiz>,
     private readonly usersService: UsersService,
-    private readonly stellarService: StellarService,
-    private readonly sorobanService: SorobanService,
+    @InjectQueue(REWARDS_QUEUE)
+    private readonly rewardsQueue: Queue,
   ) {}
 
   async submitQuiz(
@@ -90,8 +92,7 @@ export class ProgressService {
     progress.score = Math.max(progress.score, score);
 
     let xpEarned = 0;
-    let xlmReward: { amount: string; txHash: string | undefined } | null = null;
-    let nftCertificate: NFTCertificate | null = null;
+    let queuedJobId: string | null = null;
     const wasAlreadyCompleted = progress.completed;
 
     if (passed && !wasAlreadyCompleted) {
@@ -101,68 +102,40 @@ export class ProgressService {
       const lesson = await this.lessonRepository.findOne({
         where: { id: lessonId },
       });
-      const user = await this.usersService.findById(userId);
-
       xpEarned = lesson?.xpReward || 50;
       await this.usersService.addXP(userId, xpEarned);
       await this.usersService.updateStreak(userId);
-
-      // Send XLM reward from admin wallet (not user's secret key)
-      if (user.stellarPublicKey && lesson?.xlmReward) {
-        try {
-          await this.stellarService.ensureAccountFunded(user.stellarPublicKey);
-
-          const xlmResult = await this.stellarService.sendRewardFromAdmin(
-            user.stellarPublicKey,
-            lesson.xlmReward,
-          );
-          if (xlmResult.success) {
-            xlmReward = { amount: lesson.xlmReward, txHash: xlmResult.txHash };
-          }
-        } catch (error) {
-          this.logger.error(`XLM reward failed: ${error.message}`);
-        }
-      }
-
-      // Mint TNL tokens as learning reward
-      if (user.stellarPublicKey && lesson) {
-        try {
-          const tnlAmount = (lesson.xpReward || 50) / 10; // 1 TNL per 10 XP
-          await this.sorobanService.mintTokens(
-            user.stellarPublicKey,
-            tnlAmount,
-          );
-        } catch (error) {
-          this.logger.error(`TNL mint failed: ${error.message}`);
-        }
-      }
-
-      // Mint NFT certificate from admin wallet (no user secret key needed)
-      if (user.stellarPublicKey && lesson) {
-        try {
-          const nftResult = await this.stellarService.mintNFTFromAdmin(
-            user.stellarPublicKey,
-            lesson.title,
-            lessonId,
-          );
-
-          const cert = this.nftRepository.create({
-            userId,
-            lessonId,
-            txHash: nftResult.txHash,
-            assetCode: nftResult.assetCode,
-            issuerPublicKey: nftResult.issuerPublicKey || user.stellarPublicKey,
-            status: nftResult.success ? 'minted' : 'simulated',
-          });
-          nftCertificate = await this.nftRepository.save(cert);
-        } catch (error) {
-          this.logger.error(`NFT mint failed: ${error.message}`);
-        }
-      }
+      progress.rewardsStatus = 'queued';
+      progress.rewardsRetryCount = 0;
+      progress.rewardsError = null;
+      progress.rewardXlmAmount = null;
+      progress.rewardXlmTxHash = null;
+      progress.rewardsProcessedAt = null;
     }
 
     progress.xpEarned = Math.max(progress.xpEarned || 0, xpEarned);
-    await this.progressRepository.save(progress);
+    const savedProgress = await this.progressRepository.save(progress);
+
+    if (passed && !wasAlreadyCompleted) {
+      const queuedJob = await this.rewardsQueue.add(
+        PROCESS_QUIZ_REWARDS_JOB,
+        {
+          userId,
+          lessonId,
+          progressId: savedProgress.id,
+          score,
+          xpEarned,
+        },
+        {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 5000 },
+          removeOnComplete: true,
+        },
+      );
+      queuedJobId = queuedJob.id ? String(queuedJob.id) : null;
+      savedProgress.rewardsJobId = queuedJobId;
+      await this.progressRepository.save(savedProgress);
+    }
 
     return {
       score,
@@ -171,7 +144,44 @@ export class ProgressService {
       totalQuestions: answers.length,
       results,
       xpEarned,
-      xlmReward,
+      xlmReward: null,
+      nftCertificate: null,
+      rewardsStatus: savedProgress.rewardsStatus,
+      rewardsRetryCount: savedProgress.rewardsRetryCount,
+      rewardsJobId: savedProgress.rewardsJobId || queuedJobId,
+      alreadyCompleted: wasAlreadyCompleted,
+      message: passed
+        ? wasAlreadyCompleted
+          ? '¡Ya completaste esta lección! Buen repaso.'
+          : '¡Felicidades! Has completado la lección y ganado tu NFT.'
+        : `¡Sigue intentando! Necesitas ${quiz.passingScore}% para pasar. Obtuviste ${score}%.`,
+    };
+  }
+
+  async getQuizRewardStatus(userId: string, lessonId: string): Promise<any> {
+    const progress = await this.progressRepository.findOne({
+      where: { userId, lessonId },
+    });
+    if (!progress) throw new NotFoundException('Quiz progress not found');
+
+    const nftCertificate = await this.nftRepository.findOne({
+      where: { userId, lessonId },
+      order: { issuedAt: 'DESC' },
+    });
+
+    return {
+      lessonId,
+      rewardsStatus: progress.rewardsStatus,
+      rewardsRetryCount: progress.rewardsRetryCount,
+      rewardsJobId: progress.rewardsJobId,
+      rewardsError: progress.rewardsError,
+      rewardsProcessedAt: progress.rewardsProcessedAt,
+      xlmReward: progress.rewardXlmAmount
+        ? {
+            amount: progress.rewardXlmAmount,
+            txHash: progress.rewardXlmTxHash || undefined,
+          }
+        : null,
       nftCertificate: nftCertificate
         ? {
             id: nftCertificate.id,
@@ -180,12 +190,6 @@ export class ProgressService {
             status: nftCertificate.status,
           }
         : null,
-      alreadyCompleted: wasAlreadyCompleted,
-      message: passed
-        ? wasAlreadyCompleted
-          ? '¡Ya completaste esta lección! Buen repaso.'
-          : '¡Felicidades! Has completado la lección y ganado tu NFT.'
-        : `¡Sigue intentando! Necesitas ${quiz.passingScore}% para pasar. Obtuviste ${score}%.`,
     };
   }
 
