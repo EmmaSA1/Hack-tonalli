@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, Save, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, Save, X, AlertTriangle, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { QuestionFormItem } from '../services/api';
 import type { Chapter } from '../types';
@@ -250,6 +251,28 @@ export function AdminDashboard() {
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>{s.label}</div>
             </div>
           ))}
+        </div>
+        
+        {/* Business Metrics Panel */}
+        <div style={{ marginBottom: 32 }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BarChart2 size={20} color="var(--accent)" /> Métricas de Negocio
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            {[
+              { label: 'Tasa de Completitud', value: '68%', desc: 'Capítulos completados' },
+              { label: 'Tasa de Abandono', value: '12%', desc: 'En quizzes' },
+              { label: 'XLM Distribuido', value: '4,500 XLM', desc: 'Este mes' },
+              { label: 'Usuarios Activos (WAU)', value: '1,250', desc: 'Últimos 7 días' },
+              { label: 'Conversión Free a Pro', value: '4.5%', desc: 'Histórico' },
+            ].map((m, i) => (
+              <div key={i} className="card" style={{ padding: '16px 20px', borderLeft: '4px solid var(--accent)' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{m.label}</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text)', margin: '4px 0' }}>{m.value}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)' }}>{m.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {error && !showForm && (
