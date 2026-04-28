@@ -1,301 +1,290 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Check, Crown, Rocket, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { apiService } from '../services/api';
-import { useT } from '../hooks/useT';
 
 type PlanType = 'free' | 'pro' | 'max';
 
-const PLANS: { key: PlanType; price: string; priceNum: number; color: string; accent: string; icon: string }[] = [
-  { key: 'free', price: '$0', priceNum: 0, color: 'rgba(148,163,184,0.4)', accent: '#94A3B8', icon: '📖' },
-  { key: 'pro', price: '$3', priceNum: 3, color: 'rgba(233,30,140,0.4)', accent: '#E91E8C', icon: '🚀' },
-  { key: 'max', price: '$8', priceNum: 8, color: 'rgba(245,166,35,0.4)', accent: '#F5A623', icon: '👑' },
+const PLANS: Array<{
+  key: PlanType;
+  label: string;
+  price: string;
+  cadence: string;
+  accent: string;
+  icon: typeof Sparkles;
+  cta: string;
+  benefits: string[];
+}> = [
+  {
+    key: 'free',
+    label: 'Free',
+    price: '$0',
+    cadence: 'forever',
+    accent: '#94A3B8',
+    icon: Sparkles,
+    cta: 'Current foundation',
+    benefits: [
+      'Starter access for new learners',
+      'Two quiz attempts per lesson module',
+      'No paid subscription required',
+    ],
+  },
+  {
+    key: 'pro',
+    label: 'Pro',
+    price: '$3',
+    cadence: '/month',
+    accent: '#E91E8C',
+    icon: Rocket,
+    cta: 'Start Pro checkout',
+    benefits: [
+      'Unlock every Pro chapter immediately',
+      'Unlimited lesson quiz retries',
+      'Final certification unlocks at the Pro tier',
+    ],
+  },
+  {
+    key: 'max',
+    label: 'Max',
+    price: '$8',
+    cadence: '/month',
+    accent: '#F5A623',
+    icon: Crown,
+    cta: 'Start Max checkout',
+    benefits: [
+      'Everything in Pro',
+      'Access to Max-only chapters',
+      'Certificates included with the top tier',
+    ],
+  },
 ];
 
 export function PremiumPage() {
   const navigate = useNavigate();
   const { user, setUser } = useAuthStore();
-  const t = useT();
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<PlanType | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const currentPlan = user?.plan || 'free';
 
-  const handleUpgrade = async (plan: PlanType) => {
-    if (!user || plan === currentPlan) return;
-    setLoading(true);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutState = params.get('checkout');
+
+    if (checkoutState === 'cancelled') {
+      setBanner('Checkout canceled. You can pick up again whenever you are ready.');
+      return;
+    }
+
+    if (checkoutState === 'success' && user) {
+      apiService.getProfile()
+        .then((profile) => {
+          setUser(profile);
+          setBanner('Payment received. Your subscription status has been refreshed from the server.');
+        })
+        .catch(() => {
+          setBanner('Payment received. Stripe may still be finishing the webhook sync, so refresh again in a moment if needed.');
+        });
+    }
+  }, [setUser, user]);
+
+  const subtitle = useMemo(() => {
+    if (currentPlan === 'max') return 'You are on the top tier with full chapter access.';
+    if (currentPlan === 'pro') return 'You already have Pro. Upgrade to Max for the full catalog.';
+    return 'Choose the plan that unlocks the content pace you want.';
+  }, [currentPlan]);
+
+  const startCheckout = async (plan: 'pro' | 'max') => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setLoadingPlan(plan);
     setError(null);
     try {
-      await apiService.upgradePlan(plan);
-      setUser({ ...user, plan });
-      setSuccess(true);
+      const session = await apiService.createCheckoutSession(plan);
+      window.location.href = session.checkoutUrl;
     } catch (err: any) {
-      setError(err?.response?.data?.message || t('errorProcessing'));
+      setError(err?.response?.data?.message || 'Unable to start checkout right now.');
     } finally {
-      setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
-  const planBenefits: Record<PlanType, string[]> = {
-    free: [
-      'Acceso a los primeros 3 capitulos',
-      '2 intentos por quiz',
-      'Sin certificaciones',
-    ],
-    pro: [
-      'Todos los capitulos desbloqueados',
-      'Intentos ilimitados en quizzes',
-      'Certificacion por $2 USD cada una',
-      'Podio semanal (gana XLM real)',
-    ],
-    max: [
-      'Todos los capitulos desbloqueados',
-      'Intentos ilimitados en quizzes',
-      'Certificados NFT gratuitos',
-      'Podio semanal (gana XLM real)',
-      'Acceso prioritario a contenido nuevo',
-    ],
-  };
-
-  const planLabels: Record<PlanType, string> = {
-    free: 'Free',
-    pro: 'Pro',
-    max: 'Max',
-  };
-
-  const planDescs: Record<PlanType, string> = {
-    free: 'Ideal para explorar los primeros pasos en Web3 y blockchain.',
-    pro: 'Acceso completo a todo el contenido. Certificaciones disponibles por $2 USD cada una.',
-    max: 'La experiencia completa: todos los capitulos, certificados gratis y podio.',
-  };
-
   return (
-    <div style={{ minHeight: '100vh' }}>
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        style={{
-          background: 'linear-gradient(135deg, rgba(245,166,35,0.12), rgba(233,30,140,0.10))',
-          borderBottom: '1px solid var(--border)',
-          padding: '48px 24px 40px',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+    <div style={{ minHeight: '100vh', padding: '40px 24px 56px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut' }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
           style={{
-            display: 'inline-block',
-            marginBottom: 16,
-            filter: 'drop-shadow(0 0 18px rgba(245,166,35,0.7))',
+            padding: '28px 30px',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            background: 'linear-gradient(135deg, rgba(245,166,35,0.08), rgba(233,30,140,0.08), rgba(12,18,28,0.96))',
+            marginBottom: 28,
           }}
         >
-          <img
-            src="/characters/xollo.png"
-            alt="Xollo"
-            style={{ width: 80, height: 80, objectFit: 'contain' }}
-          />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)', marginBottom: 10, textTransform: 'uppercase' }}>
+                Premium access
+              </div>
+              <h1 style={{ fontSize: '2rem', lineHeight: 1.1, margin: 0, fontWeight: 900 }}>Free, Pro, and Max</h1>
+              <p style={{ color: 'var(--text-muted)', maxWidth: 620, margin: '12px 0 0' }}>{subtitle}</p>
+            </div>
+            <div
+              style={{
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8,
+                padding: '12px 16px',
+                minWidth: 180,
+                background: 'rgba(8,12,18,0.45)',
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', marginBottom: 6 }}>
+                Current plan
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{currentPlan.toUpperCase()}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                Stripe checkout powers paid upgrades.
+              </div>
+            </div>
+          </div>
         </motion.div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8 }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 900, margin: 0 }}>Elige tu Plan</h1>
-          <span style={{
-            background: currentPlan === 'max'
-              ? 'linear-gradient(135deg, #F5A623, #FFD60A)'
-              : currentPlan === 'pro'
-                ? 'linear-gradient(135deg, #E91E8C, #C2185B)'
-                : 'rgba(148,163,184,0.2)',
-            color: currentPlan === 'free' ? '#94A3B8' : '#0A0E17',
-            fontSize: '0.72rem',
-            fontWeight: 800,
-            padding: '3px 10px',
-            borderRadius: 20,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-          }}>
-            Plan {planLabels[currentPlan]}
-          </span>
-        </div>
-        <p style={{ color: 'var(--text-muted)', maxWidth: 500, margin: '0 auto' }}>
-          Aprende Web3 a tu ritmo. Elige el plan que mejor se adapte a ti.
-        </p>
-      </motion.div>
-
-      {/* Content */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 24px' }}>
-
-        {/* Success banner */}
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+        {banner && (
+          <div
             style={{
-              background: 'rgba(0,212,170,0.12)',
-              border: '1px solid rgba(0,212,170,0.4)',
-              borderRadius: 12,
-              padding: '14px 20px',
-              marginBottom: 24,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              color: '#00D4AA',
-              fontWeight: 600,
-              fontSize: '0.95rem',
+              border: '1px solid rgba(0,212,170,0.28)',
+              background: 'rgba(0,212,170,0.08)',
+              color: '#7CE7D0',
+              borderRadius: 8,
+              padding: '14px 16px',
+              marginBottom: 16,
             }}
           >
-            <span>✓</span>
-            <span>Tu plan ha sido actualizado exitosamente.</span>
-          </motion.div>
+            {banner}
+          </div>
         )}
 
         {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div
             style={{
-              background: 'rgba(233,30,140,0.10)',
-              border: '1px solid rgba(233,30,140,0.35)',
-              borderRadius: 12,
-              padding: '14px 20px',
-              marginBottom: 24,
-              color: '#E91E8C',
-              fontWeight: 600,
-              fontSize: '0.92rem',
+              border: '1px solid rgba(233,30,140,0.28)',
+              background: 'rgba(233,30,140,0.08)',
+              color: '#F4A0CC',
+              borderRadius: 8,
+              padding: '14px 16px',
+              marginBottom: 16,
             }}
           >
             {error}
-          </motion.div>
+          </div>
         )}
 
-        {/* Pricing cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20, marginBottom: 40 }}>
-          {PLANS.map((plan, idx) => {
-            const isCurrentPlan = currentPlan === plan.key;
-            const isBest = plan.key === 'max';
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18 }}>
+          {PLANS.map((plan) => {
+            const Icon = plan.icon;
+            const isCurrent = currentPlan === plan.key;
+            const isPaid = plan.key !== 'free';
+            const isUpgradeBlocked = currentPlan === 'max' || currentPlan === plan.key;
+
             return (
               <motion.div
                 key={plan.key}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
                 className="card"
                 style={{
-                  padding: 28,
-                  border: isCurrentPlan
-                    ? `1.5px solid rgba(0,212,170,0.5)`
-                    : `1.5px solid ${plan.color}`,
-                  background: isCurrentPlan
-                    ? 'linear-gradient(145deg, rgba(0,212,170,0.08), rgba(26,31,46,1))'
-                    : `linear-gradient(145deg, ${plan.accent}0D, rgba(26,31,46,1))`,
-                  position: 'relative',
-                  overflow: 'hidden',
+                  padding: 24,
+                  border: `1px solid ${isCurrent ? 'rgba(0,212,170,0.45)' : `${plan.accent}40`}`,
+                  background: `linear-gradient(180deg, ${plan.accent}12, rgba(13,18,28,0.98))`,
                 }}
               >
-                {/* Badge */}
-                {(isCurrentPlan || isBest) && (
-                  <div style={{
-                    position: 'absolute', top: 14, right: 14,
-                    background: isCurrentPlan ? 'rgba(0,212,170,0.15)' : 'rgba(245,166,35,0.2)',
-                    border: `1px solid ${isCurrentPlan ? 'rgba(0,212,170,0.4)' : 'rgba(245,166,35,0.4)'}`,
-                    borderRadius: 12, padding: '2px 8px',
-                    fontSize: '0.68rem', fontWeight: 700,
-                    color: isCurrentPlan ? '#00D4AA' : '#F5A623',
-                    textTransform: 'uppercase', letterSpacing: '0.05em',
-                  }}>
-                    {isCurrentPlan ? 'Actual' : 'Mejor valor'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 18 }}>
+                  <div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: plan.accent, fontWeight: 700, marginBottom: 10 }}>
+                      <Icon size={18} />
+                      <span>{plan.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                      <span style={{ fontSize: '2.2rem', fontWeight: 900 }}>{plan.price}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{plan.cadence}</span>
+                    </div>
                   </div>
-                )}
-
-                <div style={{ fontSize: '2rem', marginBottom: 8 }}>{plan.icon}</div>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 4, color: plan.accent }}>
-                  {planLabels[plan.key]}
-                </h2>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 16 }}>
-                  <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#F0F4F8' }}>{plan.price}</span>
-                  {plan.priceNum > 0 && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>USD/mes</span>
-                  )}
-                  {plan.priceNum === 0 && plan.key !== 'free' && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Gratis</span>
+                  {isCurrent && (
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        color: '#7CE7D0',
+                        background: 'rgba(0,212,170,0.12)',
+                        border: '1px solid rgba(0,212,170,0.28)',
+                        borderRadius: 999,
+                        padding: '5px 10px',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Current
+                    </span>
                   )}
                 </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: 20, lineHeight: 1.5 }}>
-                  {planDescs[plan.key]}
-                </p>
 
-                {/* Benefits */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-                  {planBenefits[plan.key].map((b, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.82rem' }}>
-                      <span style={{ color: '#00D4AA', fontWeight: 700, fontSize: '0.7rem' }}>✓</span>
-                      <span style={{ color: 'var(--text)' }}>{b}</span>
+                <div style={{ display: 'grid', gap: 10, marginBottom: 24 }}>
+                  {plan.benefits.map((benefit) => (
+                    <div key={benefit} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <Check size={16} style={{ color: '#00D4AA', marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ color: 'var(--text-muted)', lineHeight: 1.5 }}>{benefit}</span>
                     </div>
                   ))}
                 </div>
 
-                {isCurrentPlan ? (
-                  <div style={{
-                    width: '100%',
-                    padding: '10px 0',
-                    textAlign: 'center',
-                    background: 'rgba(0,212,170,0.10)',
-                    border: '1px solid rgba(0,212,170,0.35)',
-                    borderRadius: 8,
-                    color: '#00D4AA',
-                    fontWeight: 700,
-                    fontSize: '0.95rem',
-                  }}>
-                    Plan actual
-                  </div>
-                ) : (
+                {isPaid ? (
                   <button
-                    onClick={() => handleUpgrade(plan.key)}
-                    disabled={loading}
                     className="btn"
+                    disabled={loadingPlan !== null || isUpgradeBlocked}
+                    onClick={() => startCheckout(plan.key as 'pro' | 'max')}
                     style={{
                       width: '100%',
-                      background: loading
-                        ? `${plan.accent}4D`
-                        : `linear-gradient(135deg, ${plan.accent}, ${plan.accent}CC)`,
+                      justifyContent: 'center',
+                      background: isUpgradeBlocked ? 'rgba(148,163,184,0.16)' : `linear-gradient(135deg, ${plan.accent}, ${plan.accent}CC)`,
+                      color: isUpgradeBlocked ? 'var(--text-muted)' : '#111827',
                       border: 'none',
-                      color: '#fff',
-                      fontWeight: 700,
-                      fontSize: '0.95rem',
-                      padding: '10px 0',
-                      borderRadius: 8,
-                      cursor: loading ? 'wait' : 'pointer',
-                      opacity: loading ? 0.8 : 1,
-                      transition: 'opacity 0.2s',
+                      cursor: isUpgradeBlocked ? 'default' : 'pointer',
+                      fontWeight: 800,
                     }}
                   >
-                    {loading ? t('processing') : plan.key === 'free' ? 'Cambiar a Free' : `Obtener ${planLabels[plan.key]}`}
+                    {loadingPlan === plan.key ? 'Redirecting to Stripe...' : isUpgradeBlocked ? 'Already included' : plan.cta}
                   </button>
+                ) : (
+                  <div
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      textAlign: 'center',
+                      borderRadius: 8,
+                      border: '1px solid rgba(148,163,184,0.25)',
+                      color: 'var(--text-muted)',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {plan.cta}
+                  </div>
                 )}
               </motion.div>
             );
           })}
         </div>
 
-        {/* Back button */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.7 }}
-          style={{ textAlign: 'center' }}
-        >
-          <button
-            onClick={() => navigate(-1)}
-            className="btn btn-ghost btn-sm"
-          >
-            {t('goBack')}
-          </button>
-        </motion.div>
+        <div style={{ marginTop: 22, color: 'var(--text-subtle)', fontSize: '0.82rem', lineHeight: 1.6 }}>
+          Paid plan changes are finalized by the Stripe webhook after checkout. Set `STRIPE_SECRET_KEY`,
+          `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, and `STRIPE_MAX_PRICE_ID` on the backend before going live.
+        </div>
       </div>
     </div>
   );

@@ -229,9 +229,11 @@ export function Dashboard() {
                         </div>
                         {ch.accessible === false && (
                           <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: 4 }}>
-                            {ch.lockedReason === 'free_locked'
-                              ? t('getPremiumEarlyAccess')
-                              : t('comingSoon')}
+                            {ch.lockedReason === 'requires_max'
+                              ? 'Upgrade to Max to unlock this chapter.'
+                              : ch.lockedReason === 'requires_pro'
+                                ? 'Upgrade to Pro or Max to unlock this chapter.'
+                                : t('comingSoon')}
                           </div>
                         )}
                       </div>
