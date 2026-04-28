@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { SecretsModule } from './secrets/secrets.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { LessonsModule } from './lessons/lessons.module';
@@ -33,6 +34,7 @@ import { Streak } from './users/entities/streak.entity';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    SecretsModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
