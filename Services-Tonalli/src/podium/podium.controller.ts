@@ -1,7 +1,9 @@
 import {
   Controller, Get, Post, Patch, Query,
-  UseGuards, Req,
+  UseGuards, Req, UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { CACHE_GLOBAL_LEADERBOARD_TTL } from '../cache/cache.constants';
 import { PodiumService } from './podium.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -28,6 +30,8 @@ export class PodiumController {
   /** GET /api/podium/global — All-time leaderboard for everyone */
   @UseGuards(JwtAuthGuard)
   @Get('global')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(CACHE_GLOBAL_LEADERBOARD_TTL / 1000)
   getGlobalLeaderboard() {
     return this.podiumService.getGlobalLeaderboard();
   }

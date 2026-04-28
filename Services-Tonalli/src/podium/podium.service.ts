@@ -1,4 +1,8 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { CACHE_GLOBAL_LEADERBOARD } from '../cache/cache.constants';
+import { Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,7 +15,7 @@ import { SorobanService } from '../stellar/soroban.service';
 @Injectable()
 export class PodiumService {
   private readonly logger = new Logger(PodiumService.name);
-  private paused = false; // Circuit breaker
+  private paused = false;
 
   constructor(
     @InjectRepository(WeeklyScore)
@@ -20,6 +24,7 @@ export class PodiumService {
     private readonly rewardsRepo: Repository<PodiumReward>,
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly stellarService: StellarService,
     private readonly sorobanService: SorobanService,
   ) {}
@@ -265,16 +270,13 @@ export class PodiumService {
       relations: ['user'],
     });
 
-    const rewardAmounts = [15, 10, 5]; // USD
+    const rewardAmounts = [15, 10, 5];
     const results: PodiumReward[] = [];
 
     for (let i = 0; i < Math.min(scores.length, 3); i++) {
       const score = scores[i];
       const user = score.user;
       const rewardUsd = rewardAmounts[i];
-
-      // Plan gate disabled for demo
-      // if (user?.plan === 'free') continue;
 
       const reward = this.rewardsRepo.create({
         userId: score.userId,
@@ -284,11 +286,9 @@ export class PodiumService {
       });
 
       if (user.stellarPublicKey) {
-        // Convert USD to XLM (simplified - in production use real exchange rate)
-        const xlmAmount = (rewardUsd / 0.15).toFixed(2); // Approximate rate
+        const xlmAmount = (rewardUsd / 0.15).toFixed(2);
         reward.rewardXlm = xlmAmount;
 
-        // TODO: Set REWARD_POOL_SECRET in .env — the funded Stellar account that sends rewards
         const rewardPoolSecret = process.env.REWARD_POOL_SECRET;
         let txHash = `SIMULATED_REWARD_${targetWeek}_${i + 1}_${Date.now()}`;
 
@@ -307,7 +307,6 @@ export class PodiumService {
               reward.status = 'pending';
             }
           } else {
-            // No reward pool configured — simulate
             this.logger.warn('[Podium] REWARD_POOL_SECRET not set, using simulated txHash');
             reward.status = 'paid';
           }
@@ -318,7 +317,6 @@ export class PodiumService {
 
         reward.txHash = txHash;
 
-        // Mint podium NFT on Soroban
         try {
           const xlmStroops = Math.round(parseFloat(xlmAmount) * 10_000_000);
           const nftResult = await this.sorobanService.mintPodiumNft({
@@ -336,7 +334,6 @@ export class PodiumService {
           this.logger.error(`Podium NFT mint failed for ${user.username}: ${nftErr.message}`);
         }
       } else {
-        // No wallet — retain for 7 days
         reward.status = 'retained';
         reward.retainedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       }
@@ -345,6 +342,17 @@ export class PodiumService {
       results.push(saved);
     }
 
+    await this.invalidateLeaderboardCache();
+
     return results;
+  }
+
+  private async invalidateLeaderboardCache(): Promise<void> {
+    try {
+      await this.cacheManager.del(CACHE_GLOBAL_LEADERBOARD);
+      console.log('[Cache] Leaderboard cache invalidated');
+    } catch (error) {
+      console.warn('[Cache] Failed to invalidate leaderboard cache:', error);
+    }
   }
 }
