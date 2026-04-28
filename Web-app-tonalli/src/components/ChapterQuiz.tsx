@@ -4,6 +4,7 @@ import { LivesIndicator } from './LivesIndicator';
 import { useIssueCertificate } from '../hooks/useIssueCertificate';
 import { useT } from '../hooks/useT';
 import type { QuizQuestion } from '../types';
+import posthog from 'posthog-js';
 
 interface Props {
   moduleId: string;
@@ -283,6 +284,15 @@ export function ChapterQuiz({
       const res = await apiService.submitChapterQuiz(moduleId, finalAnswers);
       setResult(res);
       setStarted(false);
+      // Track quiz_submitted
+      posthog.capture('quiz_submitted', {
+        module_id: moduleId,
+        chapter_id: chapterId,
+        type: type,
+        score: res.score,
+        passed: res.passed,
+        answers_count: finalAnswers.length
+      });
       if (res.passed) {
         // If final exam passed, issue ACTA certificate
         if (type === 'final_exam') {
