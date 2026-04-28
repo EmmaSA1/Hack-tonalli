@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+    command: npm run start:dev
+    volumes:
+      - ./Services-Tonalli/src:/app/src
+
+  web:
+    build:
+      dockerfile: Dockerfile.dev
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      - ./Web-app-tonalli/src:/app/src
+      - ./Web-app-tonalli/index.html:/app/index.html
