@@ -6,13 +6,17 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { StellarModule } from '../stellar/stellar.module';
+import { SecretsService } from '../secrets/secrets.service';
 
 @Module({
   imports: [
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'tonalli_secret_2026',
-      signOptions: { expiresIn: '7d' },
+    JwtModule.registerAsync({
+      inject: [SecretsService],
+      useFactory: (secrets: SecretsService) => ({
+        secret: secrets.get('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' },
+      }),
     }),
     UsersModule,
     StellarModule,

@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { SecretsService } from '../secrets/secrets.service';
 
 export interface StellarKeypair {
   publicKey: string;
@@ -22,20 +23,26 @@ export interface NFTMintResult {
 }
 
 @Injectable()
-export class StellarService {
+export class StellarService implements OnModuleInit {
   private readonly logger = new Logger(StellarService.name);
   private readonly server: StellarSdk.Horizon.Server;
   private readonly networkPassphrase: string;
-  private readonly rewardPoolSecret: string | null;
+  private rewardPoolSecret: string | null = null;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly secretsService: SecretsService,
+  ) {
     const horizonUrl =
       this.configService.get('STELLAR_HORIZON_URL') ||
       'https://horizon-testnet.stellar.org';
     this.server = new StellarSdk.Horizon.Server(horizonUrl);
     this.networkPassphrase = StellarSdk.Networks.TESTNET;
-    this.rewardPoolSecret =
-      this.configService.get('REWARD_POOL_SECRET') || null;
+  }
+
+  async onModuleInit(): Promise<void> {
+    const secret = this.secretsService.get('REWARD_POOL_SECRET');
+    this.rewardPoolSecret = secret || null;
   }
 
   createKeypair(): StellarKeypair {

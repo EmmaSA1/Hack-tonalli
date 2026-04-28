@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import axios, { AxiosInstance } from 'axios';
 import { Keypair, TransactionBuilder } from '@stellar/stellar-sdk';
 import { User } from '../users/entities/user.entity';
+import { SecretsService } from '../secrets/secrets.service';
 
 const ACTA_TESTNET_URL = 'https://acta.build/api/testnet';
 
@@ -20,6 +21,7 @@ export class ActaService implements OnModuleInit {
 
   constructor(
     private configService: ConfigService,
+    private secretsService: SecretsService,
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
   ) {
@@ -34,16 +36,16 @@ export class ActaService implements OnModuleInit {
         return config;
       });
     }
+  }
 
-    const adminSecret = this.configService.get('STELLAR_ADMIN_SECRET');
+  async onModuleInit() {
+    const adminSecret = this.secretsService.get('STELLAR_ADMIN_SECRET');
     if (adminSecret) {
       this.adminKeypair = Keypair.fromSecret(adminSecret);
       this.adminPublicKey = this.adminKeypair.publicKey();
     }
-  }
 
-  async onModuleInit() {
-    const apiKey = this.configService.get('ACTA_API_KEY');
+    const apiKey = this.secretsService.get('ACTA_API_KEY');
     if (!apiKey || !this.adminKeypair) {
       this.logger.warn(
         '[ACTA] ACTA_API_KEY or STELLAR_ADMIN_SECRET not set — running in MOCK mode',
@@ -169,7 +171,7 @@ export class ActaService implements OnModuleInit {
     if (!user) throw new Error('User not found');
 
     // If no API key or admin key, use mock
-    if (!this.adminKeypair || !this.configService.get('ACTA_API_KEY')) {
+    if (!this.adminKeypair || !this.secretsService.get('ACTA_API_KEY')) {
       return this.mockIssueCredential(chapterId);
     }
 
@@ -245,7 +247,7 @@ export class ActaService implements OnModuleInit {
     vcId: string,
     owner?: string,
   ): Promise<{ status: 'valid' | 'revoked'; since?: string }> {
-    if (!this.adminKeypair || !this.configService.get('ACTA_API_KEY')) {
+    if (!this.adminKeypair || !this.secretsService.get('ACTA_API_KEY')) {
       return { status: 'valid' };
     }
 
@@ -263,7 +265,7 @@ export class ActaService implements OnModuleInit {
   // ── Get Credential ─────────────────────────────────────────────────────
 
   async getCredential(vcId: string, owner?: string): Promise<any> {
-    if (!this.adminKeypair || !this.configService.get('ACTA_API_KEY')) {
+    if (!this.adminKeypair || !this.secretsService.get('ACTA_API_KEY')) {
       return null;
     }
 
@@ -281,7 +283,7 @@ export class ActaService implements OnModuleInit {
   // ── List Credentials ───────────────────────────────────────────────────
 
   async listCredentials(owner?: string): Promise<string[]> {
-    if (!this.adminKeypair || !this.configService.get('ACTA_API_KEY')) {
+    if (!this.adminKeypair || !this.secretsService.get('ACTA_API_KEY')) {
       return [];
     }
 
