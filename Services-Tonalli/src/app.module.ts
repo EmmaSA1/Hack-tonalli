@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { VaultModule } from './vault/vault.module';
+import { EncryptionModule } from './encryption/encryption.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { LessonsModule } from './lessons/lessons.module';
@@ -33,6 +35,10 @@ import { Streak } from './users/entities/streak.entity';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    // VaultModule and EncryptionModule are @Global() — must be first so all other
+    // modules can inject VaultService and EncryptionService without explicit imports.
+    VaultModule,
+    EncryptionModule,
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
@@ -43,7 +49,7 @@ import { Streak } from './users/entities/streak.entity';
         password: process.env.DB_PASS || '',
         database: process.env.DB_NAME || 'tonalli',
         entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
+        synchronize: true,
         logging: false,
         charset: 'utf8mb4',
       }),
