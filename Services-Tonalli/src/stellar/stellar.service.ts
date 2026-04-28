@@ -29,11 +29,17 @@ export class StellarService {
   private readonly rewardPoolSecret: string | null;
 
   constructor(private readonly configService: ConfigService) {
+    const network = this.configService.get('STELLAR_NETWORK') || 'testnet';
+    const isProd = network === 'mainnet';
+
     const horizonUrl =
       this.configService.get('STELLAR_HORIZON_URL') ||
-      'https://horizon-testnet.stellar.org';
+      (isProd ? 'https://horizon.stellar.org' : 'https://horizon-testnet.stellar.org');
+
     this.server = new StellarSdk.Horizon.Server(horizonUrl);
-    this.networkPassphrase = StellarSdk.Networks.TESTNET;
+    this.networkPassphrase = isProd
+      ? StellarSdk.Networks.PUBLIC
+      : StellarSdk.Networks.TESTNET;
     this.rewardPoolSecret =
       this.configService.get('REWARD_POOL_SECRET') || null;
   }
@@ -47,6 +53,10 @@ export class StellarService {
   }
 
   async fundWithFriendbot(publicKey: string): Promise<FundResult> {
+    if (this.networkPassphrase === StellarSdk.Networks.PUBLIC) {
+      this.logger.error('Friendbot is not available on mainnet');
+      return { success: false, error: 'Friendbot unavailable on mainnet' };
+    }
     try {
       const response = await fetch(
         `https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`,

@@ -43,7 +43,8 @@ import { Streak } from './users/entities/streak.entity';
         password: process.env.DB_PASS || '',
         database: process.env.DB_NAME || 'tonalli',
         entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
+        // synchronize must be false in production — use migrations instead
+        synchronize: process.env.NODE_ENV !== 'production',
         logging: false,
         charset: 'utf8mb4',
       }),
