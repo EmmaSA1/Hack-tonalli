@@ -9,6 +9,7 @@ import {
 import { Progress } from '../../progress/entities/progress.entity';
 import { NFTCertificate } from '../../progress/entities/nft-certificate.entity';
 import { Streak } from './streak.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 @Entity('users')
 export class User {
@@ -86,6 +87,9 @@ export class User {
 
   @OneToMany(() => Streak, (streak) => streak.user)
   streaks: Streak[];
+
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+  refreshTokens: RefreshToken[];
 
   @CreateDateColumn()
   createdAt: Date;

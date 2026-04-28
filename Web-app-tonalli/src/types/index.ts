@@ -199,11 +199,12 @@ export interface WalletBalance {
 export interface AuthState {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, city: string, dateOfBirth?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => void | Promise<void>;
   setUser: (user: User) => void;
 }
 

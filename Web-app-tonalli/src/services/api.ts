@@ -14,19 +14,92 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-api.interceptors.request.use((config) => {
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
+function getTokens() {
   const auth = localStorage.getItem('tonalli-auth');
-  if (auth) {
-    try {
-      const parsed = JSON.parse(auth);
-      const token = parsed?.state?.token;
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+  if (!auth) return null;
+  try {
+    const parsed = JSON.parse(auth);
+    return { token: parsed?.state?.token, refreshToken: parsed?.state?.refreshToken };
+  } catch {
+    return null;
+  }
+}
+
+function setTokens(token: string, refreshToken: string) {
+  const auth = localStorage.getItem('tonalli-auth');
+  if (!auth) return;
+  try {
+    const parsed = JSON.parse(auth);
+    parsed.state.token = token;
+    parsed.state.refreshToken = refreshToken;
+    localStorage.setItem('tonalli-auth', JSON.stringify(parsed));
+  } catch {
+    // ignore
+  }
+}
+
+function decodeJWT(token: string): { exp: number } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+async function doRefreshToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
+  const res = await api.post('/auth/refresh', { refreshToken });
+  return { access_token: res.data.access_token, refresh_token: res.data.refresh_token };
+}
+
+api.interceptors.request.use(async (config) => {
+  const tokens = getTokens();
+  if (!tokens?.token || !tokens.refreshToken) {
+    return config;
+  }
+
+  if (config.url?.includes('/auth/')) {
+    return config;
+  }
+
+  const payload = decodeJWT(tokens.token);
+  if (payload) {
+    const now = Math.floor(Date.now() / 1000);
+    const expiresSoon = payload.exp - now < 60;
+
+    if (expiresSoon) {
+      if (!isRefreshing) {
+        isRefreshing = true;
+        refreshPromise = (async () => {
+          try {
+            const { access_token, refresh_token } = await doRefreshToken(tokens.refreshToken);
+            setTokens(access_token, refresh_token);
+          } catch {
+            localStorage.removeItem('tonalli-auth');
+            window.location.href = '/login';
+          } finally {
+            isRefreshing = false;
+            refreshPromise = null;
+          }
+        })();
       }
-    } catch {
-      // ignore
+      if (refreshPromise) {
+        await refreshPromise;
+        const updated = getTokens();
+        if (updated?.token) {
+          config.headers.Authorization = `Bearer ${updated.token}`;
+        }
+        return config;
+      }
     }
   }
+
+  config.headers.Authorization = `Bearer ${tokens.token}`;
   return config;
 });
 
@@ -72,12 +145,16 @@ export const apiService = {
   // ── Auth ─────────────────────────────────────────────────────────────────
   login: async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
-    return { token: res.data.access_token, user: normalizeUser(res.data.user) };
+    return { token: res.data.access_token, refreshToken: res.data.refresh_token, user: normalizeUser(res.data.user) };
   },
 
   register: async (username: string, email: string, password: string, city: string, dateOfBirth?: string) => {
     const res = await api.post('/auth/register', { username, email, password, city, dateOfBirth });
-    return { token: res.data.access_token, user: normalizeUser(res.data.user) };
+    return { token: res.data.access_token, refreshToken: res.data.refresh_token, user: normalizeUser(res.data.user) };
+  },
+
+  logout: async (refreshToken: string) => {
+    await api.post('/auth/logout', { refreshToken });
   },
 
   getProfile: async () => {
