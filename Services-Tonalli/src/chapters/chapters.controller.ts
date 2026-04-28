@@ -1,7 +1,16 @@
 import {
-  Controller, Get, Post, Patch, Put, Delete,
-  Param, Body, UseGuards, Req,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -61,11 +70,16 @@ export class ChaptersController {
     @Body('percent') percent: number,
     @Req() req: any,
   ) {
-    return this.chaptersService.updateVideoProgress(moduleId, req.user.id, percent);
+    return this.chaptersService.updateVideoProgress(
+      moduleId,
+      req.user.id,
+      percent,
+    );
   }
 
   /** POST /api/chapters/modules/:moduleId/quiz/submit */
   @UseGuards(JwtAuthGuard)
+  @Throttle({ quiz: { limit: 10, ttl: 60000 } })
   @Post('modules/:moduleId/quiz/submit')
   submitQuiz(
     @Param('moduleId') moduleId: string,
@@ -83,7 +97,11 @@ export class ChaptersController {
     @Body('reason') reason: string,
     @Req() req: any,
   ) {
-    return this.chaptersService.reportQuizAbandon(moduleId, req.user.id, reason || 'tab_switch');
+    return this.chaptersService.reportQuizAbandon(
+      moduleId,
+      req.user.id,
+      reason || 'tab_switch',
+    );
   }
 
   /** PATCH /api/chapters/modules/:moduleId — admin update module */
@@ -106,7 +124,10 @@ export class ChaptersController {
   @Put('modules/:id/questions')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  replaceModuleQuestions(@Param('id') id: string, @Body() body: { questions: any[] }) {
+  replaceModuleQuestions(
+    @Param('id') id: string,
+    @Body() body: { questions: any[] },
+  ) {
     return this.chaptersService.replaceModuleQuestions(id, body.questions);
   }
 

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -34,6 +36,23 @@ import { Streak } from './users/entities/streak.entity';
       envFilePath: '.env',
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 60,
+      },
+      {
+        name: 'login',
+        ttl: 900000,
+        limit: 5,
+      },
+      {
+        name: 'quiz',
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'mysql',
@@ -42,8 +61,22 @@ import { Streak } from './users/entities/streak.entity';
         username: process.env.DB_USER || 'root',
         password: process.env.DB_PASS || '',
         database: process.env.DB_NAME || 'tonalli',
-        entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
+        entities: [
+          User,
+          Lesson,
+          Quiz,
+          Progress,
+          NFTCertificate,
+          Streak,
+          Chapter,
+          ChapterModuleEntity,
+          ChapterProgress,
+          ChapterQuestion,
+          WeeklyScore,
+          PodiumReward,
+          ActaCertificate,
+        ],
+        synchronize: true, // crea/actualiza tablas automáticamente
         logging: false,
         charset: 'utf8mb4',
       }),
@@ -59,6 +92,12 @@ import { Streak } from './users/entities/streak.entity';
     ActaModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
