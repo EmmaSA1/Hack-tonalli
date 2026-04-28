@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as StellarSdk from '@stellar/stellar-sdk';
+import { VaultService } from '../vault/vault.service';
 
 export interface StellarKeypair {
   publicKey: string;
@@ -26,16 +27,37 @@ export class StellarService {
   private readonly logger = new Logger(StellarService.name);
   private readonly server: StellarSdk.Horizon.Server;
   private readonly networkPassphrase: string;
-  private readonly rewardPoolSecret: string | null;
 
-  constructor(private readonly configService: ConfigService) {
+  // Loaded lazily on first use from Vault, then cached in memory
+  private cachedAdminSecret: string | null | undefined = undefined;
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly vaultService: VaultService,
+  ) {
     const horizonUrl =
       this.configService.get('STELLAR_HORIZON_URL') ||
       'https://horizon-testnet.stellar.org';
     this.server = new StellarSdk.Horizon.Server(horizonUrl);
     this.networkPassphrase = StellarSdk.Networks.TESTNET;
-    this.rewardPoolSecret =
-      this.configService.get('REWARD_POOL_SECRET') || null;
+  }
+
+  private async getAdminSecret(): Promise<string | null> {
+    if (this.cachedAdminSecret !== undefined) return this.cachedAdminSecret;
+
+    try {
+      const secret = await this.vaultService.getSecret(
+        'tonalli/admin-stellar',
+        'secretKey',
+        'StellarService',
+      );
+      this.cachedAdminSecret = secret || null;
+    } catch (err) {
+      this.logger.warn(`Admin Stellar secret not available from Vault: ${(err as Error).message}`);
+      this.cachedAdminSecret = null;
+    }
+
+    return this.cachedAdminSecret;
   }
 
   createKeypair(): StellarKeypair {
@@ -61,8 +83,8 @@ export class StellarService {
         return { success: false, error: JSON.stringify(data) };
       }
     } catch (error) {
-      this.logger.error(`Friendbot error: ${error.message}`);
-      return { success: false, error: error.message };
+      this.logger.error(`Friendbot error: ${(error as Error).message}`);
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -110,8 +132,8 @@ export class StellarService {
       this.logger.log(`XLM reward sent: ${result.hash}`);
       return { success: true, txHash: result.hash };
     } catch (error) {
-      this.logger.error(`XLM reward error: ${error.message}`);
-      return { success: false, error: error.message };
+      this.logger.error(`XLM reward error: ${(error as Error).message}`);
+      return { success: false, error: (error as Error).message };
     }
   }
 
@@ -163,29 +185,32 @@ export class StellarService {
         issuerPublicKey: userPublicKey,
       };
     } catch (error) {
-      this.logger.error(`NFT mint error: ${error.message}`);
+      this.logger.error(`NFT mint error: ${(error as Error).message}`);
 
       return {
         success: false,
         txHash: `SIMULATED_${Date.now()}_${lessonId.substring(0, 8)}`,
         assetCode: `TNLCERT`,
         issuerPublicKey: userPublicKey,
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }
 
   /**
    * Send XLM reward from admin/reward pool wallet to user.
-   * This avoids needing the user's secret key.
+   * Admin secret key is fetched from Vault, never from environment variables.
    */
   async sendRewardFromAdmin(
     toPublicKey: string,
     amount: string,
   ): Promise<{ success: boolean; txHash?: string; error?: string }> {
-    if (!this.rewardPoolSecret) {
+    const adminSecret = await this.getAdminSecret();
+
+    if (!adminSecret) {
       this.logger.warn(
-        'REWARD_POOL_SECRET not set — simulating reward transfer',
+        '[AUDIT] Admin Stellar secret not available — simulating reward transfer. ' +
+          'Store secretKey at secret/data/tonalli/admin-stellar in Vault.',
       );
       return {
         success: true,
@@ -193,19 +218,25 @@ export class StellarService {
       };
     }
 
-    return this.sendXLMReward(this.rewardPoolSecret, toPublicKey, amount);
+    return this.sendXLMReward(adminSecret, toPublicKey, amount);
   }
 
   /**
    * Mint NFT certificate signed by admin wallet (no user secret key needed).
+   * Admin secret key is fetched from Vault, never from environment variables.
    */
   async mintNFTFromAdmin(
     userPublicKey: string,
     lessonTitle: string,
     lessonId: string,
   ): Promise<NFTMintResult> {
-    if (!this.rewardPoolSecret) {
-      this.logger.warn('REWARD_POOL_SECRET not set — simulating NFT mint');
+    const adminSecret = await this.getAdminSecret();
+
+    if (!adminSecret) {
+      this.logger.warn(
+        '[AUDIT] Admin Stellar secret not available — simulating NFT mint. ' +
+          'Store secretKey at secret/data/tonalli/admin-stellar in Vault.',
+      );
       return {
         success: true,
         txHash: `SIMULATED_NFT_${Date.now()}_${lessonId.substring(0, 8)}`,
@@ -215,7 +246,7 @@ export class StellarService {
     }
 
     try {
-      const adminKeypair = StellarSdk.Keypair.fromSecret(this.rewardPoolSecret);
+      const adminKeypair = StellarSdk.Keypair.fromSecret(adminSecret);
       const adminAccount = await this.server.loadAccount(
         adminKeypair.publicKey(),
       );
@@ -259,13 +290,13 @@ export class StellarService {
         issuerPublicKey: adminKeypair.publicKey(),
       };
     } catch (error) {
-      this.logger.error(`Admin NFT mint error: ${error.message}`);
+      this.logger.error(`Admin NFT mint error: ${(error as Error).message}`);
       return {
         success: false,
         txHash: `SIMULATED_NFT_${Date.now()}_${lessonId.substring(0, 8)}`,
         assetCode: 'TNLCERT',
         issuerPublicKey: userPublicKey,
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }

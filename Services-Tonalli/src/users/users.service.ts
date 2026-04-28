@@ -3,18 +3,23 @@ import {
   NotFoundException,
   BadRequestException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as StellarSdk from '@stellar/stellar-sdk';
 import { User } from './entities/user.entity';
+import { EncryptionService } from '../encryption/encryption.service';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   async findById(id: string): Promise<User> {
@@ -32,11 +37,21 @@ export class UsersService {
   }
 
   async create(data: Partial<User>): Promise<User> {
+    // Encrypt the Stellar secret key before persisting to the database
+    if (data.stellarSecretKey) {
+      this.logger.log('[AUDIT] Encrypting new user Stellar secret key before storage');
+      data = { ...data, stellarSecretKey: this.encryptionService.encrypt(data.stellarSecretKey) };
+    }
     const user = this.userRepository.create(data);
     return this.userRepository.save(user);
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
+    // Encrypt if the caller is updating the secret key (e.g. after key migration)
+    if (data.stellarSecretKey && !this.encryptionService.isEncrypted(data.stellarSecretKey)) {
+      this.logger.log(`[AUDIT] Encrypting updated Stellar secret key for user ${id}`);
+      data = { ...data, stellarSecretKey: this.encryptionService.encrypt(data.stellarSecretKey) };
+    }
     await this.userRepository.update(id, data);
     return this.findById(id);
   }
@@ -116,7 +131,6 @@ export class UsersService {
     userId: string,
     externalAddress: string,
   ): Promise<User> {
-    // Validate Stellar address format
     try {
       StellarSdk.Keypair.fromPublicKey(externalAddress);
     } catch {
@@ -142,10 +156,13 @@ export class UsersService {
     userId: string,
     password: string,
   ): Promise<{ secretKey: string }> {
+    this.logger.log(`[AUDIT] Secret key export requested for user ${userId} ts=${new Date().toISOString()}`);
+
     const user = await this.findById(userId);
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
+      this.logger.warn(`[AUDIT] Failed secret key export attempt for user ${userId} — wrong password`);
       throw new UnauthorizedException('Incorrect password');
     }
 
@@ -153,7 +170,11 @@ export class UsersService {
       throw new NotFoundException('No custodial wallet found');
     }
 
-    return { secretKey: user.stellarSecretKey };
+    // Decrypt the stored key (handles both encrypted and legacy plaintext values)
+    const plainSecretKey = this.encryptionService.decrypt(user.stellarSecretKey);
+
+    this.logger.log(`[AUDIT] Secret key exported successfully for user ${userId}`);
+    return { secretKey: plainSecretKey };
   }
 
   async getWalletInfo(userId: string): Promise<{

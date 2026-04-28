@@ -5,11 +5,12 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly usersService: UsersService) {
+  constructor(jwtSecret: string, private readonly usersService: UsersService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'tonalli_secret_2026',
+      // Secret is injected from Vault by the factory in AuthModule, not from process.env
+      secretOrKey: jwtSecret,
     });
   }
 
