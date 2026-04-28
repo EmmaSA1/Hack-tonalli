@@ -9,7 +9,7 @@
 
 #![no_std]
 
-use soroban_sdk::{Address, Env, String, Vec};
+use soroban_sdk::{Address, BytesN, Env, String, Vec};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TIPOS COMPARTIDOS
@@ -78,7 +78,13 @@ pub trait ILearnToEarn {
     /// # Parametros
     /// - `admin`: Cuenta Stellar del administrador (backend Tonalli)
     /// - `xlm_token`: Direccion del Stellar Asset Contract de XLM nativo
-    fn initialize(env: Env, admin: Address, xlm_token: Address);
+    fn initialize(
+        env: Env,
+        admin: Address,
+        xlm_token: Address,
+        upgrade_admin_2: Address,
+        upgrade_admin_3: Address,
+    );
 
     // ── Recompensas ─────────────────────────────────────────────────────────
 
@@ -138,6 +144,21 @@ pub trait ILearnToEarn {
 
     /// Retira XLM del pool (emergencia). Solo admin.
     fn withdraw(env: Env, to: Address, amount: i128);
+
+    /// Pausa distribución de recompensas. Solo admin.
+    fn pause(env: Env);
+
+    /// Reanuda distribución de recompensas. Solo admin.
+    fn unpause(env: Env);
+
+    /// Estado de pausa.
+    fn is_paused(env: Env) -> bool;
+
+    /// Rescate de fondos del pool. Solo admin.
+    fn emergency_withdraw(env: Env, admin: Address, to: Address, amount: i128);
+
+    /// Upgrade de contrato con aprobación 2-of-3.
+    fn upgrade(env: Env, approvers: Vec<Address>, new_wasm_hash: BytesN<32>);
 
     /// Retorna la direccion del admin actual.
     fn admin(env: Env) -> Address;
