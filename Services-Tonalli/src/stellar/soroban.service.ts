@@ -68,18 +68,25 @@ export interface CertificateData {
 @Injectable()
 export class SorobanService {
   private readonly logger = new Logger(SorobanService.name);
+  private readonly mockMode: boolean;
   private rpc: SorobanRpc.Server;
   private adminKeypair: Keypair;
   private network: string;
   private networkPassphrase: string;
 
-  // Direcciones de los contratos desplegados (se configuran en .env)
   private nftContractId: string;
   private rewardsContractId: string;
   private tokenContractId: string;
   private podiumNftContractId: string;
 
   constructor(private configService: ConfigService) {
+    this.mockMode = this.configService.get('SOROBAN_MOCK_MODE') === 'true';
+
+    const nodeEnv = this.configService.get('NODE_ENV');
+    if (this.mockMode && nodeEnv === 'production') {
+      throw new Error('Soroban mock mode is not allowed in production');
+    }
+
     const horizonUrl =
       this.configService.get('STELLAR_SOROBAN_URL') ||
       'https://soroban-testnet.stellar.org';
@@ -90,7 +97,6 @@ export class SorobanService {
     if (adminSecret) {
       this.adminKeypair = Keypair.fromSecret(adminSecret);
     } else {
-      // En desarrollo, generar keypair temporal
       this.adminKeypair = Keypair.random();
       this.logger.warn(
         `No STELLAR_ADMIN_SECRET set. Using random keypair: ${this.adminKeypair.publicKey()}`,
@@ -108,6 +114,23 @@ export class SorobanService {
       this.configService.get('TOKEN_CONTRACT_ID') || '';
     this.podiumNftContractId =
       this.configService.get('PODIUM_NFT_CONTRACT_ID') || '';
+
+    if (!this.mockMode) {
+      const missingIds: string[] = [];
+      if (!this.nftContractId) missingIds.push('NFT_CONTRACT_ID');
+      if (!this.rewardsContractId) missingIds.push('REWARDS_CONTRACT_ID');
+      if (!this.tokenContractId) missingIds.push('TOKEN_CONTRACT_ID');
+      if (!this.podiumNftContractId) missingIds.push('PODIUM_NFT_CONTRACT_ID');
+      if (missingIds.length > 0) {
+        throw new Error(
+          `Missing contract IDs (required in LIVE mode): ${missingIds.join(', ')}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `[SorobanService] Running in ${this.mockMode ? 'MOCK' : 'LIVE'} mode`,
+    );
   }
 
   // ── NFT Certificate ────────────────────────────────────────────────────────
@@ -121,8 +144,7 @@ export class SorobanService {
     txHash: string;
     contractId: string;
   }> {
-    if (!this.nftContractId) {
-      this.logger.warn('NFT_CONTRACT_ID not set — using mock response');
+    if (this.mockMode) {
       return this.mockMintCertificate(params);
     }
 
@@ -251,8 +273,7 @@ export class SorobanService {
     amountStroops: number;
     txHash: string;
   }> {
-    if (!this.rewardsContractId) {
-      this.logger.warn('REWARDS_CONTRACT_ID not set — using mock response');
+    if (this.mockMode) {
       return this.mockRewardUser(params);
     }
 
@@ -300,8 +321,7 @@ export class SorobanService {
     toPublicKey: string,
     amount: number,
   ): Promise<{ success: boolean; txHash: string; amount: number }> {
-    if (!this.tokenContractId) {
-      this.logger.warn('TOKEN_CONTRACT_ID not set — using mock response');
+    if (this.mockMode) {
       return this.mockMintTokens(toPublicKey, amount);
     }
 
@@ -393,8 +413,7 @@ export class SorobanService {
     success: boolean;
     txHash: string;
   }> {
-    if (!this.podiumNftContractId) {
-      this.logger.warn('PODIUM_NFT_CONTRACT_ID not set — using mock response');
+    if (this.mockMode) {
       return this.mockMintPodiumNft(params);
     }
 
