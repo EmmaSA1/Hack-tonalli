@@ -16,7 +16,7 @@ export class ChapterQuestion {
   @Column('text')
   question: string;
 
-  @Column('json')
+  @Column({ type: 'jsonb' })
   options: string[];
 
   @Column()

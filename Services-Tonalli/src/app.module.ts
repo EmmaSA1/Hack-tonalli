@@ -36,16 +36,15 @@ import { Streak } from './users/entities/streak.entity';
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
-        type: 'mysql',
+        type: 'postgres',
         host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '3306'),
-        username: process.env.DB_USER || 'root',
-        password: process.env.DB_PASS || '',
+        port: parseInt(process.env.DB_PORT || '5432'),
+        username: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASS || 'postgres',
         database: process.env.DB_NAME || 'tonalli',
         entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
         synchronize: true,   // crea/actualiza tablas automáticamente
         logging: false,
-        charset: 'utf8mb4',
       }),
     }),
     AuthModule,

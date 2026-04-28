@@ -18,8 +18,8 @@ export class Quiz {
   @Column()
   lessonId: string;
 
-  @Column({ type: 'text' })
-  questionsPool: string;
+  @Column({ type: 'jsonb' })
+  questionsPool: Record<string, unknown>[];
 
   @Column({ default: 10 })
   questionsPerAttempt: number;

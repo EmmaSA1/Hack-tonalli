@@ -19,7 +19,7 @@ export class Chapter {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'longtext', nullable: true })
+  @Column({ type: 'text', nullable: true })
   content: string;
 
   @Column({ nullable: true })

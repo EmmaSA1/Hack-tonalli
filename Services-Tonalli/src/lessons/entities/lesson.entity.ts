@@ -43,7 +43,7 @@ export class Lesson {
   })
   type: LessonType;
 
-  @Column({ type: 'longtext', nullable: true })
+  @Column({ type: 'text', nullable: true })
   content: string;
 
   @Column({ default: 50 })

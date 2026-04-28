@@ -47,6 +47,15 @@ else
   echo "✅ Admin desde variable de entorno: $ADMIN_PUBLIC"
 fi
 
+# Upgrade multisig admins (2-of-3 with admin + two guardians)
+echo ""
+echo "🛡️  Configurando guardians de upgrade..."
+stellar keys generate --global tonalli-guardian-2 --network $NETWORK 2>/dev/null || true
+stellar keys generate --global tonalli-guardian-3 --network $NETWORK 2>/dev/null || true
+UPGRADE_ADMIN_2=$(stellar keys address tonalli-guardian-2)
+UPGRADE_ADMIN_3=$(stellar keys address tonalli-guardian-3)
+echo "✅ Upgrade admins: $ADMIN_PUBLIC, $UPGRADE_ADMIN_2, $UPGRADE_ADMIN_3"
+
 # Fondear con Friendbot (solo testnet)
 echo ""
 echo "💧 Fondeando cuenta con Friendbot..."
@@ -78,7 +87,9 @@ stellar contract invoke \
   --source tonalli-admin \
   --network $NETWORK \
   -- initialize \
-  --admin $ADMIN_PUBLIC
+  --admin $ADMIN_PUBLIC \
+  --upgrade_admin_2 $UPGRADE_ADMIN_2 \
+  --upgrade_admin_3 $UPGRADE_ADMIN_3
 
 echo "✅ NFT contract inicializado"
 
@@ -114,7 +125,9 @@ stellar contract invoke \
   --network $NETWORK \
   -- initialize \
   --admin $ADMIN_PUBLIC \
-  --xlm_token $XLM_SAC
+  --xlm_token $XLM_SAC \
+  --upgrade_admin_2 $UPGRADE_ADMIN_2 \
+  --upgrade_admin_3 $UPGRADE_ADMIN_3
 
 # Depositar XLM inicial al pool de recompensas (10 XLM)
 echo "💰 Depositando 100 XLM al pool de recompensas..."
@@ -167,6 +180,8 @@ STELLAR_ADMIN_PUBLIC=$ADMIN_PUBLIC
 NFT_CONTRACT_ID=$NFT_CONTRACT_ID
 REWARDS_CONTRACT_ID=$REWARDS_CONTRACT_ID
 PODIUM_NFT_CONTRACT_ID=$PODIUM_NFT_CONTRACT_ID
+UPGRADE_ADMIN_2=$UPGRADE_ADMIN_2
+UPGRADE_ADMIN_3=$UPGRADE_ADMIN_3
 
 # XLM Stellar Asset Contract (SAC)
 XLM_SAC_ADDRESS=$XLM_SAC

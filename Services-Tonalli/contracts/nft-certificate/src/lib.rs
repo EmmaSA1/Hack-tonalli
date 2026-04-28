@@ -14,7 +14,7 @@
 
 use soroban_sdk::{
     contract, contractimpl, contracttype,
-    Address, Env, Map, String, Vec, Symbol, symbol_short,
+    Address, BytesN, Env, String, Vec, Symbol, symbol_short,
     log,
 };
 
@@ -22,6 +22,8 @@ use soroban_sdk::{
 
 const ADMIN_KEY: Symbol = symbol_short!("ADMIN");
 const COUNTER_KEY: Symbol = symbol_short!("COUNTER");
+const UPGRADE_ADMINS_KEY: Symbol = symbol_short!("UP_ADM");
+const UPGRADE_THRESHOLD: u32 = 2;
 
 #[contracttype]
 #[derive(Clone)]
@@ -64,16 +66,67 @@ pub struct NftCertificateContract;
 
 #[contractimpl]
 impl NftCertificateContract {
+    fn require_valid_upgrade_approvers(env: &Env, approvers: Vec<Address>) {
+        let admins: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&UPGRADE_ADMINS_KEY)
+            .expect("Upgrade admins not configured");
+
+        let mut approved_count: u32 = 0;
+        let mut seen: Vec<Address> = Vec::new(env);
+
+        for approver in approvers.iter() {
+            let mut is_upgrade_admin = false;
+            for admin in admins.iter() {
+                if approver == admin {
+                    is_upgrade_admin = true;
+                    break;
+                }
+            }
+            if !is_upgrade_admin {
+                panic!("Approver is not an upgrade admin");
+            }
+
+            let mut already_seen = false;
+            for prev in seen.iter() {
+                if prev == approver {
+                    already_seen = true;
+                    break;
+                }
+            }
+
+            if !already_seen {
+                approver.require_auth();
+                seen.push_back(approver);
+                approved_count += 1;
+            }
+        }
+
+        if approved_count < UPGRADE_THRESHOLD {
+            panic!("Not enough upgrade admin approvals");
+        }
+    }
 
     // ── Inicialización ────────────────────────────────────────────────────────
 
     /// Inicializa el contrato con la dirección del administrador (backend de Tonalli)
-    pub fn initialize(env: Env, admin: Address) {
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        upgrade_admin_2: Address,
+        upgrade_admin_3: Address,
+    ) {
         if env.storage().instance().has(&ADMIN_KEY) {
             panic!("Contract already initialized");
         }
         env.storage().instance().set(&ADMIN_KEY, &admin);
         env.storage().instance().set(&COUNTER_KEY, &0u64);
+        let mut upgrade_admins = Vec::new(&env);
+        upgrade_admins.push_back(admin.clone());
+        upgrade_admins.push_back(upgrade_admin_2);
+        upgrade_admins.push_back(upgrade_admin_3);
+        env.storage().instance().set(&UPGRADE_ADMINS_KEY, &upgrade_admins);
         log!(&env, "Tonalli NFT Certificate Contract initialized. Admin: {}", admin);
     }
 
@@ -205,6 +258,12 @@ impl NftCertificateContract {
         admin.require_auth();
         env.storage().instance().set(&ADMIN_KEY, &new_admin);
     }
+
+    /// Actualiza el WASM del contrato usando aprobación multi-firma 2-de-3.
+    pub fn upgrade(env: Env, approvers: Vec<Address>, new_wasm_hash: BytesN<32>) {
+        Self::require_valid_upgrade_approvers(&env, approvers);
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
+    }
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -226,7 +285,9 @@ mod tests {
     fn test_initialize() {
         let (env, client) = create_test_env();
         let admin = Address::generate(&env);
-        client.initialize(&admin);
+        let admin_2 = Address::generate(&env);
+        let admin_3 = Address::generate(&env);
+        client.initialize(&admin, &admin_2, &admin_3);
         assert_eq!(client.admin(), admin);
         assert_eq!(client.total_supply(), 0);
     }
@@ -236,8 +297,10 @@ mod tests {
         let (env, client) = create_test_env();
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
+        let admin_2 = Address::generate(&env);
+        let admin_3 = Address::generate(&env);
 
-        client.initialize(&admin);
+        client.initialize(&admin, &admin_2, &admin_3);
 
         let token_id = client.mint(
             &user,
@@ -263,8 +326,10 @@ mod tests {
         let (env, client) = create_test_env();
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
+        let admin_2 = Address::generate(&env);
+        let admin_3 = Address::generate(&env);
 
-        client.initialize(&admin);
+        client.initialize(&admin, &admin_2, &admin_3);
 
         // Mint 2 certificados para el mismo usuario
         client.mint(
@@ -293,8 +358,10 @@ mod tests {
         let (env, client) = create_test_env();
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
+        let admin_2 = Address::generate(&env);
+        let admin_3 = Address::generate(&env);
 
-        client.initialize(&admin);
+        client.initialize(&admin, &admin_2, &admin_3);
 
         assert!(!client.has_certificate(&user, &String::from_str(&env, "lesson-01")));
 
@@ -316,8 +383,10 @@ mod tests {
     fn test_double_initialize_fails() {
         let (env, client) = create_test_env();
         let admin = Address::generate(&env);
-        client.initialize(&admin);
-        client.initialize(&admin); // debe fallar
+        let admin_2 = Address::generate(&env);
+        let admin_3 = Address::generate(&env);
+        client.initialize(&admin, &admin_2, &admin_3);
+        client.initialize(&admin, &admin_2, &admin_3); // debe fallar
     }
 
     #[test]
@@ -326,7 +395,9 @@ mod tests {
         let (env, client) = create_test_env();
         let admin = Address::generate(&env);
         let user = Address::generate(&env);
-        client.initialize(&admin);
+        let admin_2 = Address::generate(&env);
+        let admin_3 = Address::generate(&env);
+        client.initialize(&admin, &admin_2, &admin_3);
         client.mint(
             &user,
             &String::from_str(&env, "lesson-01"),
