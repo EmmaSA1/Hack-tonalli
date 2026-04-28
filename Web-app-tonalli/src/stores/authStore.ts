@@ -6,9 +6,10 @@ import { apiService } from '../services/api';
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
 
@@ -17,11 +18,11 @@ export const useAuthStore = create<AuthState>()(
         try {
           if (MOCK_MODE) {
             await new Promise((r) => setTimeout(r, 800));
-            set({ user: mockUser, token: 'mock-token-123', isAuthenticated: true, isLoading: false });
+            set({ user: mockUser, token: 'mock-token-123', refreshToken: null, isAuthenticated: true, isLoading: false });
             return;
           }
           const data = await apiService.login(email, password);
-          set({ user: data.user, token: data.token, isAuthenticated: true, isLoading: false });
+          set({ user: data.user, token: data.token, refreshToken: data.refreshToken, isAuthenticated: true, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
           throw err;
@@ -34,26 +35,34 @@ export const useAuthStore = create<AuthState>()(
           if (MOCK_MODE) {
             await new Promise((r) => setTimeout(r, 1000));
             const newUser: User = { ...mockUser, username, email, city, xp: 0, level: 1, streak: 0, xlmEarned: 0, lessonsCompleted: 0, nftCertificates: [], plan: 'free' as const };
-            set({ user: newUser, token: 'mock-token-new', isAuthenticated: true, isLoading: false });
+            set({ user: newUser, token: 'mock-token-new', refreshToken: null, isAuthenticated: true, isLoading: false });
             return;
           }
           const data = await apiService.register(username, email, password, city, dateOfBirth);
-          set({ user: data.user, token: data.token, isAuthenticated: true, isLoading: false });
+          set({ user: data.user, token: data.token, refreshToken: data.refreshToken, isAuthenticated: true, isLoading: false });
         } catch (err) {
           set({ isLoading: false });
           throw err;
         }
       },
 
-      logout: () => {
-        set({ user: null, token: null, isAuthenticated: false });
+      logout: async () => {
+        const { refreshToken } = get();
+        if (refreshToken) {
+          try {
+            await apiService.logout(refreshToken);
+          } catch {
+            // best effort
+          }
+        }
+        set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
       },
 
       setUser: (user: User) => set({ user }),
     }),
     {
       name: 'tonalli-auth',
-      partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ token: state.token, refreshToken: state.refreshToken, user: state.user, isAuthenticated: state.isAuthenticated }),
     }
   )
 );
