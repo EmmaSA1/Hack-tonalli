@@ -9,25 +9,29 @@ Emite un NFT on-chain cuando un usuario completa una lección.
 
 | Función | Descripción |
 |---|---|
-| `initialize(admin)` | Configura el contrato con el admin (backend Tonalli) |
+| `initialize(admin, upgrade_admin_2, upgrade_admin_3)` | Configura admin operativo y multisig de upgrades |
 | `mint(to, lesson_id, module_id, username, score, xp, metadata_uri)` | Emite NFT certificado |
 | `get_certificate(token_id)` | Consulta datos de un certificado |
 | `get_user_certificates(owner)` | Lista todos los certificados de un usuario |
 | `has_certificate(owner, lesson_id)` | ¿Tiene el usuario este certificado? |
 | `total_supply()` | Total de NFTs emitidos |
+| `upgrade(approvers, new_wasm_hash)` | Upgrade WASM con aprobación 2-de-3 |
 
 ### 2. `learn-to-earn` — Recompensas XLM
 Distribuye recompensas en XLM de forma verificable on-chain con anti-double-claim.
 
 | Función | Descripción |
 |---|---|
-| `initialize(admin, xlm_token)` | Configura con admin y SAC de XLM nativo |
+| `initialize(admin, xlm_token, upgrade_admin_2, upgrade_admin_3)` | Configura admin, token y multisig de upgrades |
 | `reward_user(user, lesson_id, amount, score)` | Envía XLM al usuario |
 | `deposit(from, amount)` | Admin deposita XLM al pool |
+| `pause()` / `unpause()` | Pausa/reanuda distribución de recompensas |
+| `emergency_withdraw(admin, to, amount)` | Rescate de fondos del pool |
 | `get_user_total_rewards(user)` | Total XLM recibido por usuario |
 | `get_reward_history(user)` | Historial de recompensas |
 | `is_lesson_rewarded(user, lesson_id)` | Anti-double-claim check |
 | `pool_balance()` | Balance disponible en el pool |
+| `upgrade(approvers, new_wasm_hash)` | Upgrade WASM con aprobación 2-de-3 |
 
 ## Setup
 

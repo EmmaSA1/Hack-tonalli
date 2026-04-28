@@ -111,6 +111,11 @@ export const apiService = {
     return res.data;
   },
 
+  getQuizRewardStatus: async (lessonId: string) => {
+    const res = await api.get(`/progress/rewards/${lessonId}/status`);
+    return res.data;
+  },
+
   // ── Chapters (new system) ───────────────────────────────────────────────
   getChapters: async () => {
     const res = await api.get('/chapters');
@@ -214,6 +219,16 @@ export const apiService = {
 
   adminReplaceModuleQuestions: async (moduleId: string, questions: QuestionFormItem[]) => {
     const res = await api.put(`/chapters/modules/${moduleId}/questions`, { questions });
+    return res.data;
+  },
+
+  adminGetUsers: async () => {
+    const res = await api.get('/users/admin/all');
+    return res.data;
+  },
+
+  adminGetMetrics: async () => {
+    const res = await api.get('/users/admin/metrics');
     return res.data;
   },
 

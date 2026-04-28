@@ -185,4 +185,40 @@ export class UsersService {
       character: user.character || 'chima',
     }));
   }
+
+  async adminGetUsers(): Promise<any[]> {
+    const users = await this.userRepository.find({
+      order: { createdAt: 'DESC' },
+    });
+
+    return users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName || user.username,
+      email: user.email,
+      xp: user.xp,
+      totalXp: user.totalXp,
+      streak: user.currentStreak,
+      plan: user.plan || 'free',
+      character: user.character || 'chima',
+    }));
+  }
+
+  async adminGetMetrics(): Promise<{ totalQuizzes: number; totalXlmDistributed: number }> {
+    // Total XLM distributed: sum of totalXp / 100
+    const { sumXp } = await this.userRepository
+      .createQueryBuilder('user')
+      .select('SUM(user.totalXp)', 'sumXp')
+      .getRawOne();
+    
+    // Total Quizzes: count of chapter_progress where completed = true or quizCompleted = true
+    const progressCount = await this.userRepository.query(
+      `SELECT COUNT(*) as count FROM chapter_progress WHERE "completed" = 1 OR "quizCompleted" = 1`
+    );
+
+    return {
+      totalQuizzes: parseInt(progressCount[0].count, 10) || 0,
+      totalXlmDistributed: Math.floor((parseInt(sumXp, 10) || 0) / 100),
+    };
+  }
 }

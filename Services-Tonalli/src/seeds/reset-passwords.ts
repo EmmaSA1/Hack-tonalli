@@ -12,16 +12,15 @@ import { Streak } from '../users/entities/streak.entity';
 import { Chapter } from '../chapters/entities/chapter.entity';
 
 const AppDataSource = new DataSource({
-  type: 'mysql',
+  type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASS || 'postgres',
   database: process.env.DB_NAME || 'tonalli',
   entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter],
   synchronize: true,
   logging: false,
-  charset: 'utf8mb4',
 });
 
 async function resetPasswords() {

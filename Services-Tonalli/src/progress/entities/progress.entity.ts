@@ -38,7 +38,28 @@ export class Progress {
   xpEarned: number;
 
   @Column({ nullable: true })
-  completedAt: Date;
+  completedAt: Date | null;
+
+  @Column({ default: 'none' })
+  rewardsStatus: 'none' | 'queued' | 'processing' | 'completed' | 'failed';
+
+  @Column({ nullable: true })
+  rewardsJobId: string | null;
+
+  @Column({ default: 0 })
+  rewardsRetryCount: number;
+
+  @Column({ nullable: true })
+  rewardsError: string | null;
+
+  @Column({ nullable: true })
+  rewardXlmAmount: string | null;
+
+  @Column({ nullable: true })
+  rewardXlmTxHash: string | null;
+
+  @Column({ nullable: true })
+  rewardsProcessedAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

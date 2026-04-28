@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Param } from '@nestjs/common';
 import { ProgressService } from './progress.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -16,5 +16,11 @@ export class ProgressController {
   @UseGuards(JwtAuthGuard)
   async getCertificates(@Req() req) {
     return this.progressService.getUserCertificates(req.user.id);
+  }
+
+  @Get('progress/rewards/:lessonId/status')
+  @UseGuards(JwtAuthGuard)
+  async getRewardStatus(@Req() req, @Param('lessonId') lessonId: string) {
+    return this.progressService.getQuizRewardStatus(req.user.id, lessonId);
   }
 }
