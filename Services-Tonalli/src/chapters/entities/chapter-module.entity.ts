@@ -32,7 +32,7 @@ export class ChapterModule {
 
   // ── Info section (for lesson modules) ────────────────────────────────────
   // JSON with { sections: [...], keyTerms: [...] }
-  @Column({ type: 'longtext', nullable: true })
+  @Column({ type: 'text', nullable: true })
   content: string;
 
   // ── Video section (for lesson modules) ───────────────────────────────────
@@ -41,8 +41,8 @@ export class ChapterModule {
 
   // ── Quiz section (for lesson modules AND final_exam) ─────────────────────
   // JSON array of questions
-  @Column({ type: 'longtext', nullable: true })
-  questionsPool: string;
+  @Column({ type: 'jsonb', nullable: true })
+  questionsPool: Record<string, unknown>[] | null;
 
   @Column({ default: 5 })
   questionsPerAttempt: number;

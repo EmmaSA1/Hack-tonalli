@@ -18,16 +18,15 @@ import { PodiumReward } from '../podium/entities/podium-reward.entity';
 import { ActaCertificate } from '../certificates/entities/acta-certificate.entity';
 
 const AppDataSource = new DataSource({
-  type: 'mysql',
+  type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASS || 'postgres',
   database: process.env.DB_NAME || 'tonalli',
   entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModule, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
   synchronize: true,
   logging: false,
-  charset: 'utf8mb4',
 });
 
 const MODULE_ID = 'mod-intro-blockchain';
@@ -1355,7 +1354,7 @@ Términos clave:
       characterDialogue: '¡Hola! Soy Chima. ¡Bienvenido a tu primera lección!',
       content: JSON.stringify({ sections: [{ title: 'Blockchain', text: 'Ver capítulo completo para más info.', icon: '🔗' }] }),
     }));
-    await quizRepo.save(quizRepo.create({ lessonId: lesson1.id, questionsPool: JSON.stringify(BLOCKCHAIN_QUESTIONS), questionsPerAttempt: 10, passingScore: 70 }));
+    await quizRepo.save(quizRepo.create({ lessonId: lesson1.id, questionsPool: BLOCKCHAIN_QUESTIONS, questionsPerAttempt: 10, passingScore: 70 }));
 
     const lesson2 = await lessonRepo.save(lessonRepo.create({
       title: '¿Cómo funciona Stellar?', description: 'Stellar y sus ventajas.',
@@ -1364,7 +1363,7 @@ Términos clave:
       characterDialogue: '¡Qué onda! Soy Alli. Stellar es mi favorita.',
       content: JSON.stringify({ sections: [{ title: 'Stellar', text: 'Ver capítulo completo para más info.', icon: '⭐' }] }),
     }));
-    await quizRepo.save(quizRepo.create({ lessonId: lesson2.id, questionsPool: JSON.stringify(STELLAR_QUESTIONS), questionsPerAttempt: 10, passingScore: 70 }));
+    await quizRepo.save(quizRepo.create({ lessonId: lesson2.id, questionsPool: STELLAR_QUESTIONS, questionsPerAttempt: 10, passingScore: 70 }));
 
     const lesson3 = await lessonRepo.save(lessonRepo.create({
       title: 'Tu primera wallet', description: 'Cómo funciona tu wallet Stellar.',
@@ -1373,7 +1372,7 @@ Términos clave:
       characterDialogue: '¡Guau! Soy Xollo 🐕 ¡Ya tienes una wallet Stellar!',
       content: JSON.stringify({ sections: [{ title: 'Wallet', text: 'Ver capítulo completo para más info.', icon: '👛' }] }),
     }));
-    await quizRepo.save(quizRepo.create({ lessonId: lesson3.id, questionsPool: JSON.stringify(WALLET_QUESTIONS), questionsPerAttempt: 10, passingScore: 70 }));
+    await quizRepo.save(quizRepo.create({ lessonId: lesson3.id, questionsPool: WALLET_QUESTIONS, questionsPerAttempt: 10, passingScore: 70 }));
 
     console.log('✅ 3 legacy lessons created');
   }

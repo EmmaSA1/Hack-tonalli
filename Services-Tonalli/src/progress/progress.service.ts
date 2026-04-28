@@ -17,6 +17,12 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+function normalizeQuestionsPool(pool: unknown): QuizQuestion[] {
+  if (Array.isArray(pool)) return pool as QuizQuestion[];
+  if (typeof pool === 'string') return JSON.parse(pool) as QuizQuestion[];
+  return [];
+}
+
 @Injectable()
 export class ProgressService {
   private readonly logger = new Logger(ProgressService.name);
@@ -43,7 +49,7 @@ export class ProgressService {
     const quiz = await this.quizRepository.findOne({ where: { lessonId } });
     if (!quiz) throw new NotFoundException('Quiz not found');
 
-    const pool: QuizQuestion[] = JSON.parse(quiz.questionsPool);
+    const pool = normalizeQuestionsPool(quiz.questionsPool);
     const questionMap = new Map(pool.map((q) => [q.id, q]));
 
     let correctCount = 0;
