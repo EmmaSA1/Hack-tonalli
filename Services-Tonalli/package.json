@@ -19,7 +19,10 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:soroban:testnet:setup": "ts-node test/soroban-testnet-setup.ts",
+    "test:soroban:testnet:teardown": "ts-node test/soroban-testnet-teardown.ts",
+    "test:soroban:testnet": "npm run test:soroban:testnet:setup && jest --config ./test/jest-soroban-testnet.json --runInBand"
   },
   "dependencies": {
     "@acta-team/acta-sdk": "^1.1.9",
