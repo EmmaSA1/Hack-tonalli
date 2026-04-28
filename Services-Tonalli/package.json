@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "seed": "ts-node -r tsconfig-paths/register src/seeds/seed.ts",
+    "re-encrypt": "ts-node -r tsconfig-paths/register src/scripts/re-encrypt-secrets.ts",
     "seed:prod": "node dist/seeds/seed.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
