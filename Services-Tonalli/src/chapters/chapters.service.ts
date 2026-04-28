@@ -14,6 +14,8 @@ import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { User } from '../users/entities/user.entity';
 import { SorobanService } from '../stellar/soroban.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class ChaptersService {
@@ -29,6 +31,7 @@ export class ChaptersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly sorobanService: SorobanService,
+    @InjectQueue('rewards') private readonly rewardsQueue: Queue,
   ) {}
 
   // ── Admin CRUD ───────────────────────────────────────────────────────────
@@ -432,6 +435,9 @@ export class ChaptersService {
 
     const isFinalExam = mod.type === 'final_exam';
 
+    let xlmReward = null;
+    let nftCertificate = null;
+
     if (isFinalExam) {
       progress.attempts += 1;
       progress.score = Math.max(progress.score, score);
@@ -452,42 +458,19 @@ export class ChaptersService {
 
         // Trigger NFT mint for final exam completion
         if (user.stellarPublicKey) {
-          try {
-            const chapter = await this.chaptersRepo.findOne({ where: { id: mod.chapterId } });
-            await this.sorobanService.mintCertificate({
-              userPublicKey: user.stellarPublicKey,
-              lessonId: mod.chapterId,
-              moduleId: mod.id,
-              username: user.username,
-              score,
-              xpEarned: mod.xpReward,
-              metadataUri: `https://tonalli.app/certificates/${mod.chapterId}`,
-            });
-          } catch (e) {
-            // Non-blocking: log but don't fail the quiz submission
-            console.error('NFT mint error:', e.message);
-          }
+          await this.rewardsQueue.add('process-rewards', {
+            userId: user.id,
+            userPublicKey: user.stellarPublicKey,
+            username: user.username,
+            chapterId: mod.chapterId,
+            moduleId: mod.id,
+            isFinalExam: true,
+            xpReward: mod.xpReward,
+            score
+          }, { attempts: 3, backoff: 5000 });
 
-          // On-chain XLM reward via Learn-to-Earn contract
-          try {
-            const xlmAmount = (mod.xpReward || 50) / 100; // 0.5 XLM per 50 XP
-            await this.sorobanService.rewardUser({
-              userPublicKey: user.stellarPublicKey,
-              lessonId: mod.chapterId,
-              amountXlm: xlmAmount,
-              score,
-            });
-          } catch (e) {
-            console.error('On-chain reward error:', e.message);
-          }
-
-          // Mint TNL tokens
-          try {
-            const tnlAmount = (mod.xpReward || 50) / 10;
-            await this.sorobanService.mintTokens(user.stellarPublicKey, tnlAmount);
-          } catch (e) {
-            console.error('TNL mint error:', e.message);
-          }
+          xlmReward = { amount: ((mod.xpReward || 50) / 100).toString(), txHash: null };
+          nftCertificate = { id: 'pending', txHash: '', assetCode: 'CERT', status: 'Procesando en cola...' };
         }
       } else if (!isFinalExam && !progress.quizCompleted) {
         progress.quizCompleted = true;
@@ -503,24 +486,18 @@ export class ChaptersService {
 
           // On-chain XLM reward via Learn-to-Earn contract for lesson modules
           if (user.stellarPublicKey) {
-            try {
-              const xlmAmount = (mod.xpReward || 30) / 100; // 0.3 XLM per 30 XP
-              await this.sorobanService.rewardUser({
-                userPublicKey: user.stellarPublicKey,
-                lessonId: mod.id,
-                amountXlm: xlmAmount,
-                score,
-              });
-            } catch (e) {
-              console.error('On-chain reward error (module):', e.message);
-            }
+            await this.rewardsQueue.add('process-rewards', {
+              userId: user.id,
+              userPublicKey: user.stellarPublicKey,
+              username: user.username,
+              chapterId: mod.chapterId,
+              moduleId: mod.id,
+              isFinalExam: false,
+              xpReward: mod.xpReward,
+              score
+            }, { attempts: 3, backoff: 5000 });
 
-            try {
-              const tnlAmount = (mod.xpReward || 30) / 10;
-              await this.sorobanService.mintTokens(user.stellarPublicKey, tnlAmount);
-            } catch (e) {
-              console.error('TNL mint error (module):', e.message);
-            }
+            xlmReward = { amount: ((mod.xpReward || 30) / 100).toString(), txHash: null };
           }
         }
       }
@@ -567,6 +544,8 @@ export class ChaptersService {
       moduleCompleted: progress.completed,
       mustRedoModule: mustRedoModule || false,
       message,
+      xlmReward,
+      nftCertificate,
     };
   }
 

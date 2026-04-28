@@ -281,12 +281,14 @@ export function Quiz() {
                   <div style={{ fontWeight: 900, fontSize: '0.9rem' }}>NFT Certificado en Stellar!</div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                     Tx: {result.nftCertificate.txHash?.substring(0, 20) || 'simulated'}...
+                    {result.nftCertificate.txHash ? `Tx: ${result.nftCertificate.txHash.substring(0, 20)}...` : 'Tx: Procesando en cola...'}
                   </div>
                 </div>
               </motion.div>
             )}
 
             {result.xlmReward?.txHash && (
+            {result.xlmReward && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -301,6 +303,11 @@ export function Quiz() {
                 }}
               >
                 XLM Tx: <span style={{ fontFamily: 'monospace' }}>{result.xlmReward.txHash.substring(0, 24)}...</span>
+                {result.xlmReward.txHash ? (
+                  <>XLM Tx: <span style={{ fontFamily: 'monospace' }}>{result.xlmReward.txHash.substring(0, 24)}...</span></>
+                ) : (
+                  <>Recompensa XLM en cola (Procesando...)</>
+                )}
               </motion.div>
             )}
 
