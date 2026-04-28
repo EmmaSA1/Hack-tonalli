@@ -64,6 +64,18 @@ export class User {
   plan: 'free' | 'pro' | 'max';
 
   @Column({ nullable: true })
+  stripeCustomerId: string;
+
+  @Column({ nullable: true })
+  stripeSubscriptionId: string;
+
+  @Column({ nullable: true })
+  stripeCheckoutSessionId: string;
+
+  @Column({ nullable: true })
+  stripeSubscriptionStatus: string;
+
+  @Column({ nullable: true })
   dateOfBirth: string;
 
   @Column({ nullable: true })
@@ -73,10 +85,10 @@ export class User {
   isFirstLogin: boolean;
 
   @Column({ nullable: true })
-  companion: string; // 'chima' | 'alli'
+  companion: string;
 
   @Column({ nullable: true })
-  avatarType: string; // 'mariachi_hombre' | 'mariachi_mujer'
+  avatarType: string;
 
   @OneToMany(() => Progress, (progress) => progress.user)
   progress: Progress[];

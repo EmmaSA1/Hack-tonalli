@@ -96,7 +96,9 @@ export class UsersService {
       externalWalletAddress: user.externalWalletAddress || null,
       walletType: user.walletType || 'custodial',
       character: user.character,
+      role: user.role,
       plan: user.plan || 'free',
+      stripeSubscriptionStatus: user.stripeSubscriptionStatus || null,
       isFirstLogin: user.isFirstLogin,
       companion: user.companion,
       avatarType: user.avatarType,
@@ -110,13 +112,10 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  // ── Wallet Methods ──────────────────────────────────────────────────────
-
   async connectExternalWallet(
     userId: string,
     externalAddress: string,
   ): Promise<User> {
-    // Validate Stellar address format
     try {
       StellarSdk.Keypair.fromPublicKey(externalAddress);
     } catch {
