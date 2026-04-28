@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { SecretKeySanitizerInterceptor } from './common/interceptors/secret-key-sanitizer.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.useGlobalInterceptors(new SecretKeySanitizerInterceptor());
 
   app.enableCors({
     origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8081'],

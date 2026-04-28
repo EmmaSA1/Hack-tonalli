@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -26,6 +26,8 @@ import { Quiz } from './lessons/entities/quiz.entity';
 import { Progress } from './progress/entities/progress.entity';
 import { NFTCertificate } from './progress/entities/nft-certificate.entity';
 import { Streak } from './users/entities/streak.entity';
+import { EncryptionService } from './common/encryption.service';
+import { UserSubscriber } from './users/subscribers/user.subscriber';
 
 @Module({
   imports: [
@@ -35,7 +37,7 @@ import { Streak } from './users/entities/streak.entity';
     }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
-      useFactory: () => ({
+      useFactory: (encryptionService: EncryptionService): TypeOrmModuleOptions => ({
         type: 'mysql',
         host: process.env.DB_HOST || 'localhost',
         port: parseInt(process.env.DB_PORT || '3306'),
@@ -43,10 +45,13 @@ import { Streak } from './users/entities/streak.entity';
         password: process.env.DB_PASS || '',
         database: process.env.DB_NAME || 'tonalli',
         entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
+        synchronize: true,
         logging: false,
         charset: 'utf8mb4',
+        subscribers: [new UserSubscriber(encryptionService)] as any,
       }),
+      imports: [ConfigModule],
+      inject: [EncryptionService],
     }),
     AuthModule,
     UsersModule,
@@ -59,6 +64,9 @@ import { Streak } from './users/entities/streak.entity';
     ActaModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    EncryptionService,
+  ],
 })
 export class AppModule {}
