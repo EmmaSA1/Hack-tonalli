@@ -324,6 +324,16 @@ export const apiService = {
     return res.data;
   },
 
+  submitSignedTransaction: async (xdr: string) => {
+    const res = await api.post('/stellar/submit-signed', { xdr });
+    return res.data;
+  },
+
+  buildUnsignedTransaction: async (publicKey: string, operations: any[]) => {
+    const res = await api.post('/stellar/build-unsigned', { publicKey, operations });
+    return res.data;
+  },
+
   // ── Legacy ──────────────────────────────────────────────────────────────
   getRankings: async () => {
     const res = await api.get('/rankings');
