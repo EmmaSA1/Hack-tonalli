@@ -80,34 +80,39 @@ export class SorobanService {
   private podiumNftContractId: string;
 
   constructor(private configService: ConfigService) {
-    const horizonUrl =
-      this.configService.get('STELLAR_SOROBAN_URL') ||
-      'https://soroban-testnet.stellar.org';
+    this.network = this.configService.get('STELLAR_NETWORK') || 'testnet';
+    const isProd = this.network === 'mainnet';
 
-    this.rpc = new SorobanRpc.Server(horizonUrl, { allowHttp: false });
+    const sorobanUrl =
+      this.configService.get('STELLAR_SOROBAN_URL') ||
+      (isProd
+        ? 'https://mainnet.stellar.validationcloud.io/v1/XLM'
+        : 'https://soroban-testnet.stellar.org');
+
+    this.rpc = new SorobanRpc.Server(sorobanUrl, { allowHttp: false });
 
     const adminSecret = this.configService.get('STELLAR_ADMIN_SECRET');
     if (adminSecret) {
       this.adminKeypair = Keypair.fromSecret(adminSecret);
     } else {
-      // En desarrollo, generar keypair temporal
+      if (isProd) {
+        throw new Error(
+          'STELLAR_ADMIN_SECRET is required in production. Load it from HSM/KMS.',
+        );
+      }
+      // Dev/testnet only: generate a temporary keypair
       this.adminKeypair = Keypair.random();
       this.logger.warn(
         `No STELLAR_ADMIN_SECRET set. Using random keypair: ${this.adminKeypair.publicKey()}`,
       );
     }
 
-    this.network = this.configService.get('STELLAR_NETWORK') || 'testnet';
-    this.networkPassphrase =
-      this.network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET;
+    this.networkPassphrase = isProd ? Networks.PUBLIC : Networks.TESTNET;
 
     this.nftContractId = this.configService.get('NFT_CONTRACT_ID') || '';
-    this.rewardsContractId =
-      this.configService.get('REWARDS_CONTRACT_ID') || '';
-    this.tokenContractId =
-      this.configService.get('TOKEN_CONTRACT_ID') || '';
-    this.podiumNftContractId =
-      this.configService.get('PODIUM_NFT_CONTRACT_ID') || '';
+    this.rewardsContractId = this.configService.get('REWARDS_CONTRACT_ID') || '';
+    this.tokenContractId = this.configService.get('TOKEN_CONTRACT_ID') || '';
+    this.podiumNftContractId = this.configService.get('PODIUM_NFT_CONTRACT_ID') || '';
   }
 
   // ── NFT Certificate ────────────────────────────────────────────────────────
@@ -644,9 +649,12 @@ export class SorobanService {
   }
 
 
-  // ── Mock Responses (para demo sin contratos desplegados) ──────────────────
+  // ── Mock Responses (dev/testnet only — disabled in production) ───────────
 
   private async mockMintCertificate(params: MintCertificateParams) {
+    if (this.network === 'mainnet') {
+      throw new Error('NFT_CONTRACT_ID is required in production. Mock responses are disabled.');
+    }
     const tokenId = Math.floor(Math.random() * 9000) + 1000;
     const txHash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16),
@@ -664,6 +672,9 @@ export class SorobanService {
   }
 
   private async mockMintTokens(toPublicKey: string, amount: number) {
+    if (this.network === 'mainnet') {
+      throw new Error('TOKEN_CONTRACT_ID is required in production. Mock responses are disabled.');
+    }
     const txHash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16),
     ).join('');
@@ -676,6 +687,9 @@ export class SorobanService {
   }
 
   private async mockMintPodiumNft(params: MintPodiumNftParams) {
+    if (this.network === 'mainnet') {
+      throw new Error('PODIUM_NFT_CONTRACT_ID is required in production. Mock responses are disabled.');
+    }
     const txHash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16),
     ).join('');
@@ -688,6 +702,9 @@ export class SorobanService {
   }
 
   private async mockRewardUser(params: RewardUserParams) {
+    if (this.network === 'mainnet') {
+      throw new Error('REWARDS_CONTRACT_ID is required in production. Mock responses are disabled.');
+    }
     const bonus = params.score === 100 ? params.amountXlm * 0.1 : 0;
     const finalXlm = params.amountXlm + bonus;
     const txHash = Array.from({ length: 64 }, () =>
