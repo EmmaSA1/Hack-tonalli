@@ -1,7 +1,12 @@
 import {
   Controller, Get, Post, Patch, Put, Delete,
-  Param, Body, UseGuards, Req,
+  Param, Body, UseGuards, Req, UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import {
+  CACHE_CHAPTERS_LIST,
+  CACHE_CHAPTERS_TTL,
+} from '../cache/cache.constants';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -18,6 +23,8 @@ export class ChaptersController {
   /** GET /api/chapters — returns published chapters filtered by user plan + week */
   @UseGuards(JwtAuthGuard)
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(CACHE_CHAPTERS_TTL / 1000)
   findPublished(@Req() req: any) {
     return this.chaptersService.findPublishedForUser(req.user.id);
   }

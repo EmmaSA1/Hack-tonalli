@@ -4,7 +4,11 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { CACHE_CHAPTERS_LIST } from '../cache/cache.constants';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { Chapter } from './entities/chapter.entity';
 import { ChapterModule } from './entities/chapter-module.entity';
@@ -28,6 +32,7 @@ export class ChaptersService {
     private readonly questionsRepo: Repository<ChapterQuestion>,
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly sorobanService: SorobanService,
   ) {}
 
@@ -56,6 +61,8 @@ export class ChaptersService {
         xpReward: m.xpReward,
       }));
     }
+
+    await this.invalidateChaptersCache();
 
     return this.findOne(saved.id);
   }
@@ -145,29 +152,38 @@ export class ChaptersService {
   async update(id: string, dto: UpdateChapterDto): Promise<Chapter> {
     const ch = await this.findOne(id);
     Object.assign(ch, dto);
-    return this.chaptersRepo.save(ch);
+    const result = await this.chaptersRepo.save(ch);
+    await this.invalidateChaptersCache();
+    return result;
   }
 
   async remove(id: string): Promise<void> {
     await this.chaptersRepo.remove(await this.findOne(id));
+    await this.invalidateChaptersCache();
   }
 
   async togglePublish(id: string): Promise<Chapter> {
     const ch = await this.findOne(id);
     ch.published = !ch.published;
-    return this.chaptersRepo.save(ch);
+    const result = await this.chaptersRepo.save(ch);
+    await this.invalidateChaptersCache();
+    return result;
   }
 
   /** Admin: set releaseWeek for a chapter (release it for a specific week) */
   async setReleaseWeek(id: string, week: string): Promise<Chapter> {
     const ch = await this.findOne(id);
     ch.releaseWeek = week;
-    return this.chaptersRepo.save(ch);
+    const result = await this.chaptersRepo.save(ch);
+    await this.invalidateChaptersCache();
+    return result;
   }
 
   /** Admin: release chapter for the current week */
   async releaseThisWeek(id: string): Promise<Chapter> {
-    return this.setReleaseWeek(id, this.getCurrentWeek());
+    const result = await this.setReleaseWeek(id, this.getCurrentWeek());
+    await this.invalidateChaptersCache();
+    return result;
   }
 
   async updateModule(moduleId: string, data: Partial<ChapterModule>): Promise<ChapterModule> {
@@ -683,5 +699,14 @@ export class ChaptersService {
       progress = await this.progressRepo.save(progress);
     }
     return progress;
+  }
+
+  private async invalidateChaptersCache(): Promise<void> {
+    try {
+      await this.cacheManager.del(CACHE_CHAPTERS_LIST);
+      console.log('[Cache] Chapters cache invalidated');
+    } catch (error) {
+      console.warn('[Cache] Failed to invalidate chapters cache:', error);
+    }
   }
 }

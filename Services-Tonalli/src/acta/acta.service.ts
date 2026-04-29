@@ -1,5 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_CERTIFICATE, CACHE_CERTIFICATE_TTL } from '../cache/cache.constants';
+import { Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios, { AxiosInstance } from 'axios';
@@ -22,6 +26,7 @@ export class ActaService implements OnModuleInit {
     private configService: ConfigService,
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
     const apiKey = this.configService.get('ACTA_API_KEY');
     const baseURL = this.configService.get('ACTA_BASE_URL') || ACTA_TESTNET_URL;
@@ -245,6 +250,32 @@ export class ActaService implements OnModuleInit {
     vcId: string,
     owner?: string,
   ): Promise<{ status: 'valid' | 'revoked'; since?: string }> {
+    const cacheKey = `${CACHE_CERTIFICATE}${vcId}:${owner || 'default'}`;
+    
+    try {
+      const cached = await this.cacheManager.get(cacheKey);
+      if (cached) {
+        return cached as { status: 'valid' | 'revoked'; since?: string };
+      }
+    } catch (err) {
+      this.logger.warn('[Cache] Read error:', err.message);
+    }
+
+    const result = await this.performVerifyCredential(vcId, owner);
+
+    try {
+      await this.cacheManager.set(cacheKey, result, CACHE_CERTIFICATE_TTL);
+    } catch (err) {
+      this.logger.warn('[Cache] Write error:', err.message);
+    }
+
+    return result;
+  }
+
+  private async performVerifyCredential(
+    vcId: string,
+    owner?: string,
+  ): Promise<{ status: 'valid' | 'revoked'; since?: string }> {
     if (!this.adminKeypair || !this.configService.get('ACTA_API_KEY')) {
       return { status: 'valid' };
     }
@@ -256,13 +287,38 @@ export class ActaService implements OnModuleInit {
       });
       return res.data;
     } catch {
-      return { status: 'valid' }; // Graceful fallback
+      return { status: 'valid' };
     }
   }
 
   // ── Get Credential ─────────────────────────────────────────────────────
 
   async getCredential(vcId: string, owner?: string): Promise<any> {
+    const cacheKey = `${CACHE_CERTIFICATE}get:${vcId}:${owner || 'default'}`;
+    
+    try {
+      const cached = await this.cacheManager.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    } catch (err) {
+      this.logger.warn('[Cache] Read error:', err.message);
+    }
+
+    const result = await this.performGetCredential(vcId, owner);
+
+    if (result) {
+      try {
+        await this.cacheManager.set(cacheKey, result, CACHE_CERTIFICATE_TTL);
+      } catch (err) {
+        this.logger.warn('[Cache] Write error:', err.message);
+      }
+    }
+
+    return result;
+  }
+
+  private async performGetCredential(vcId: string, owner?: string): Promise<any> {
     if (!this.adminKeypair || !this.configService.get('ACTA_API_KEY')) {
       return null;
     }
