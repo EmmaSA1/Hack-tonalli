@@ -1,0 +1,43 @@
+name: build-backend
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  build-backend:
+    name: nest build – TypeScript check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Services-Tonalli
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Services-Tonalli/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (fails on TypeScript errors)
+        run: npm run build
+
+      - name: Run Jest with coverage (minimum 70%)
+        run: |
+          npm run test:cov -- \
+            --coverageThreshold='{"global":{"lines":70,"functions":70,"branches":70,"statements":70}}'
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: Services-Tonalli/coverage/
