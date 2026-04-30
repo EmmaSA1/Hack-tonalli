@@ -7,7 +7,10 @@ export interface QuestionFormItem {
   explanation: string;
 }
 
-const BASE_URL = 'http://localhost:3001/api';
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_PUBLIC_API_URL ||
+  'http://localhost:3001/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -321,6 +324,16 @@ export const apiService = {
 
   exportSecretKey: async (password: string) => {
     const res = await api.post('/users/me/wallet/export-secret', { password });
+    return res.data;
+  },
+
+  submitSignedTransaction: async (xdr: string) => {
+    const res = await api.post('/stellar/submit-signed', { xdr });
+    return res.data;
+  },
+
+  buildUnsignedTransaction: async (publicKey: string, operations: any[]) => {
+    const res = await api.post('/stellar/build-unsigned', { publicKey, operations });
     return res.data;
   },
 
