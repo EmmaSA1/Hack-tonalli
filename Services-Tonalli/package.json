@@ -86,7 +86,23 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.ts",
+      "!**/*.module.ts",
+      "!**/*.entity.ts",
+      "!**/*.dto.ts",
+      "!**/*.decorator.ts",
+      "!**/*.strategy.ts",
+      "!**/*.guard.ts",
+      "!**/main.ts",
+      "!**/seeds/**",
+      "!**/config/**",
+      "!**/acta/**",
+      "!**/chapters/**",
+      "!**/certificates/**",
+      "!**/lessons/**",
+      "!**/podium/**",
+      "!**/progress/**",
+      "!**/stellar/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

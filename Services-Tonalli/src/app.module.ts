@@ -14,6 +14,8 @@ import { ChaptersModule } from './chapters/chapters.module';
 import { PodiumModule } from './podium/podium.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { ActaModule } from './acta/acta.module';
+import { HealthModule } from './health/health.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { Chapter } from './chapters/entities/chapter.entity';
 import { ChapterModule as ChapterModuleEntity } from './chapters/entities/chapter-module.entity';
 import { ChapterProgress } from './chapters/entities/chapter-progress.entity';
@@ -63,6 +65,8 @@ import { redisConfig } from './config/redis.config';
     PodiumModule,
     CertificatesModule,
     ActaModule,
+    HealthModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
