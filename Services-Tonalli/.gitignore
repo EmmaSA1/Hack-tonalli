@@ -36,3 +36,6 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 .env.test
+
+# Rust / Anchor build artifacts
+/contracts/target/
