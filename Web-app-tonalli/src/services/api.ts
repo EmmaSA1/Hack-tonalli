@@ -220,6 +220,16 @@ export const apiService = {
     return res.data;
   },
 
+  adminGetUsers: async () => {
+    const res = await api.get('/users/admin/all');
+    return res.data;
+  },
+
+  adminGetMetrics: async () => {
+    const res = await api.get('/users/admin/metrics');
+    return res.data;
+  },
+
   // ── Leaderboard / Podium ────────────────────────────────────────────────
   getLeaderboard: async () => {
     const res = await api.get('/podium/global');

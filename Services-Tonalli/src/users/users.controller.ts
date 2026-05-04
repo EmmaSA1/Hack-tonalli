@@ -11,6 +11,8 @@ import { UsersService } from './users.service';
 import { StellarService } from '../stellar/stellar.service';
 import { SorobanService } from '../stellar/soroban.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller()
 export class UsersController {
@@ -79,6 +81,22 @@ export class UsersController {
   @Get('rankings')
   async getRankings() {
     return this.usersService.getRankings();
+  }
+
+  // ── Admin Endpoints ──────────────────────────────────────────────────────
+
+  @Get('users/admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async getAdminUsers() {
+    return this.usersService.adminGetUsers();
+  }
+
+  @Get('users/admin/metrics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async getAdminMetrics() {
+    return this.usersService.adminGetMetrics();
   }
 
   // ── Wallet Endpoints ────────────────────────────────────────────────────
