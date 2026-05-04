@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, Save, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, BookOpen, Save, X, AlertTriangle, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { apiService } from '../services/api';
 import type { QuestionFormItem } from '../services/api';
 import type { Chapter } from '../types';
@@ -61,6 +61,8 @@ const emptyForm: ChapterForm = {
 
 export function AdminDashboard() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState({ totalQuizzes: 0, totalXlmDistributed: 0 });
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,9 +75,15 @@ export function AdminDashboard() {
 
   const load = async () => {
     try {
-      const data = await apiService.adminGetChapters();
+      const [data, usersData, metricsData] = await Promise.all([
+        apiService.adminGetChapters(),
+        apiService.adminGetUsers(),
+        apiService.adminGetMetrics()
+      ]);
       setChapters(data);
-    } catch { setError('No se pudo cargar los capítulos.'); }
+      setUsers(usersData);
+      setMetrics(metricsData);
+    } catch { setError('No se pudo cargar la información.'); }
     finally { setLoading(false); }
   };
 
@@ -215,6 +223,25 @@ export function AdminDashboard() {
     catch { setError('Error al eliminar.'); }
   };
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === chapters.length - 1) return;
+    
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const current = chapters[index];
+    const target = chapters[targetIndex];
+    
+    setLoading(true);
+    try {
+      await apiService.adminUpdateChapter(current.id, { order: target.order });
+      await apiService.adminUpdateChapter(target.id, { order: current.order });
+      await load();
+    } catch {
+      setError('Error al reordenar capitulos.');
+      setLoading(false);
+    }
+  };
+
   const updateModule = (index: number, field: keyof ModuleForm, value: any) => {
     setForm(f => {
       const mods = [...f.modules] as [ModuleForm, ModuleForm, ModuleForm];
@@ -244,6 +271,8 @@ export function AdminDashboard() {
             { label: 'Total capitulos', value: chapters.length, color: 'var(--text)' },
             { label: 'Publicados', value: published, color: 'var(--success)' },
             { label: 'Borradores', value: drafts, color: 'var(--text-muted)' },
+            { label: 'Quizzes Completados', value: metrics.totalQuizzes, color: '#3b82f6' },
+            { label: 'XLM Distribuido', value: metrics.totalXlmDistributed, color: '#f59e0b' },
           ].map((s, i) => (
             <div key={i} className="card" style={{ padding: '16px 20px' }}>
               <div style={{ fontSize: '1.8rem', fontWeight: 700, color: s.color }}>{s.value}</div>
@@ -293,6 +322,9 @@ export function AdminDashboard() {
                   {ch.published ? 'Publicado' : 'Borrador'}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleMove(chapters.indexOf(ch), 'up')} disabled={chapters.indexOf(ch) === 0} title="Mover Arriba"><ChevronUp size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => handleMove(chapters.indexOf(ch), 'down')} disabled={chapters.indexOf(ch) === chapters.length - 1} title="Mover Abajo"><ChevronDown size={14} /></button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => window.open('/chapters/' + ch.id, '_blank')} title="Preview"><ExternalLink size={14} /></button>
                   <button className="btn btn-ghost btn-sm" onClick={() => handleTogglePublish(ch.id)} title={ch.published ? 'Despublicar' : 'Publicar'}>{ch.published ? <EyeOff size={14} /> : <Eye size={14} />}</button>
                   <button className="btn btn-ghost btn-sm" onClick={() => openEdit(ch)} title="Editar"><Pencil size={14} /></button>
                   {deleteConfirm === ch.id ? (
@@ -308,6 +340,44 @@ export function AdminDashboard() {
             ))}
           </div>
         )}
+
+        {/* Users Table */}
+        <div style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: 16 }}>Usuarios</h2>
+          <div className="card" style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                  <th style={{ padding: '12px 16px' }}>Usuario</th>
+                  <th style={{ padding: '12px 16px' }}>Email</th>
+                  <th style={{ padding: '12px 16px' }}>Plan</th>
+                  <th style={{ padding: '12px 16px' }}>XP Total</th>
+                  <th style={{ padding: '12px 16px' }}>Racha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600 }}>{u.displayName}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{u.email}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span className="badge" style={{ background: u.plan === 'max' ? 'rgba(234,179,8,0.1)' : u.plan === 'pro' ? 'rgba(59,130,246,0.1)' : 'var(--bg-subtle)', color: u.plan === 'max' ? '#eab308' : u.plan === 'pro' ? '#3b82f6' : 'var(--text-muted)', border: '1px solid currentColor' }}>
+                        {u.plan.toUpperCase()}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', fontSize: '0.9rem' }}>{u.totalXp}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '0.9rem' }}>{u.streak} 🔥</td>
+                  </tr>
+                ))}
+                {users.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay usuarios aun.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {/* ── Form Modal ─────────────────────────────────────────────────────────── */}
