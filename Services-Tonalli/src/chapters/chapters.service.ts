@@ -14,6 +14,7 @@ import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { User } from '../users/entities/user.entity';
 import { SorobanService } from '../stellar/soroban.service';
+import { PostHogService } from '../posthog/posthog.service';
 
 @Injectable()
 export class ChaptersService {
@@ -29,6 +30,7 @@ export class ChaptersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly sorobanService: SorobanService,
+    private readonly postHogService: PostHogService,
   ) {}
 
   // ── Admin CRUD ───────────────────────────────────────────────────────────
@@ -565,6 +567,17 @@ export class ChaptersService {
     }
 
     await this.progressRepo.save(progress);
+
+    // Track quiz_submitted
+    this.postHogService.capture('quiz_submitted', {
+      module_id: moduleId,
+      chapter_id: mod.chapterId,
+      type: mod.type,
+      score,
+      passed,
+      answers_count: answers.length,
+      user_id: userId
+    }, userId);
 
     let message: string;
     if (passed) {

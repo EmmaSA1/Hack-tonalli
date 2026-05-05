@@ -11,6 +11,7 @@ import { VideoModule } from '../components/VideoModule';
 import { LivesIndicator } from '../components/LivesIndicator';
 import { ConversionScreen } from '../components/ConversionScreen';
 import { ChapterQuiz } from '../components/ChapterQuiz';
+import posthog from 'posthog-js';
 
 type ActiveView =
   | { step: 'overview' }
@@ -36,6 +37,14 @@ export function ChapterFlow() {
     try {
       const data = await apiService.getChapterWithProgress(chapterId);
       setChapter(data);
+      // Track chapter_started if just started
+      if (data.completionPercent === 0 && user) {
+        posthog.capture('chapter_started', {
+          chapter_id: chapterId,
+          user_id: user.id,
+          language: language
+        });
+      }
     } catch (err) { console.error(err); }
     setLoading(false);
   };

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ActaCertificate } from './entities/acta-certificate.entity';
 import { User } from '../users/entities/user.entity';
 import { ActaService } from '../acta/acta.service';
+import { PostHogService } from '../posthog/posthog.service';
 
 @Injectable()
 export class CertificatesService {
@@ -15,6 +16,7 @@ export class CertificatesService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly actaService: ActaService,
+    private readonly postHogService: PostHogService,
   ) {}
 
   // Issue a real ACTA verifiable credential and store in DB
@@ -46,6 +48,16 @@ export class CertificatesService {
     this.logger.log(
       `[ACTA] Certificate issued: vcId=${vcId}, txId=${txId}, user=${data.userId}`,
     );
+
+    // Track certificate_issued
+    this.postHogService.capture('certificate_issued', {
+      user_id: data.userId,
+      chapter_id: data.chapterId,
+      chapter_title: data.chapterTitle,
+      exam_score: data.examScore,
+      vc_id: vcId,
+      tx_hash: txId
+    }, data.userId);
 
     return {
       id: saved.id,

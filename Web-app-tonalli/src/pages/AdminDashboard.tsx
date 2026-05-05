@@ -70,6 +70,17 @@ export function AdminDashboard() {
   const [error, setError] = useState('');
   const [expandedModule, setExpandedModule] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<Record<number, 'info' | 'video' | 'quiz'>>({ 0: 'info', 1: 'info', 2: 'info' });
+  const [metrics, setMetrics] = useState({
+    chapterStarted: 0,
+    quizSubmitted: 0,
+    certificatesIssued: 0,
+    dau: 0,
+    wau: 0,
+    totalXlm: 0,
+    completionRate: 0,
+    dropOffRate: 0,
+    conversionRate: 0,
+  });
 
   const load = async () => {
     try {
@@ -79,7 +90,23 @@ export function AdminDashboard() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadMetrics = async () => {
+    // TODO: Fetch from PostHog API
+    // For now, placeholder data
+    setMetrics({
+      chapterStarted: 150,
+      quizSubmitted: 120,
+      certificatesIssued: 45,
+      dau: 25,
+      wau: 180,
+      totalXlm: 1250.5,
+      completionRate: 75,
+      dropOffRate: 25,
+      conversionRate: 15,
+    });
+  };
+
+  useEffect(() => { load(); loadMetrics(); }, []);
 
   const openCreate = () => {
     setEditingId(null);
@@ -250,6 +277,29 @@ export function AdminDashboard() {
               <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>{s.label}</div>
             </div>
           ))}
+        </div>
+
+        {/* Metrics */}
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: 16 }}>Métricas de Analytics</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            {[
+              { label: 'Capítulos Iniciados', value: metrics.chapterStarted, color: 'var(--primary)' },
+              { label: 'Quizzes Enviados', value: metrics.quizSubmitted, color: 'var(--success)' },
+              { label: 'Certificados Emitidos', value: metrics.certificatesIssued, color: 'var(--warning)' },
+              { label: 'DAU', value: metrics.dau, color: 'var(--info)' },
+              { label: 'WAU', value: metrics.wau, color: 'var(--secondary)' },
+              { label: 'XLM Distribuido', value: `${metrics.totalXlm} XLM`, color: 'var(--accent)' },
+              { label: 'Tasa Completación', value: `${metrics.completionRate}%`, color: 'var(--success)' },
+              { label: 'Tasa Abandono', value: `${metrics.dropOffRate}%`, color: 'var(--danger)' },
+              { label: 'Conversión Free-Pro', value: `${metrics.conversionRate}%`, color: 'var(--primary)' },
+            ].map((m, i) => (
+              <div key={i} className="card" style={{ padding: '16px 20px' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: m.color }}>{m.value}</div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {error && !showForm && (

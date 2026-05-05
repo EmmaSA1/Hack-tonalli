@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiService } from '../services/api';
+import posthog from 'posthog-js';
 
 interface IssueCertificateParams {
   chapterId: string;
@@ -22,6 +23,15 @@ export function useIssueCertificate() {
         chapterId,
         chapterTitle,
         examScore,
+      });
+
+      // Track certificate_issued
+      posthog.capture('certificate_issued', {
+        chapter_id: chapterId,
+        chapter_title: chapterTitle,
+        exam_score: examScore,
+        vc_id: result.actaVcId,
+        tx_hash: result.txHash
       });
 
       setIssuing(false);

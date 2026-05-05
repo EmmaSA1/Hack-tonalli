@@ -15,6 +15,7 @@ import { useAuthStore } from "../src/store/authStore";
 import { useProgressStore } from "../src/store/progressStore";
 import { useLanguageStore } from "../src/store/languageStore";
 import { COLORS } from "../src/constants/colors";
+import PostHog from 'posthog-react-native'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,11 @@ export default function RootLayout() {
     hydrateAuth();
     hydrateProgress();
     hydrateLang();
+    // Initialize PostHog
+    PostHog.configure({
+      apiKey: 'your-project-api-key',
+      host: 'your-posthog-host'
+    });
   }, []);
 
   if (!fontsLoaded || !authHydrated || !progressHydrated) {
