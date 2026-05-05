@@ -185,4 +185,31 @@ export class UsersService {
       character: user.character || 'chima',
     }));
   }
+
+  async adminGetUsers(page: number, limit: number, search: string): Promise<{ users: any[]; total: number }> {
+    const qb = this.userRepository.createQueryBuilder('user');
+    if (search) {
+      qb.where(
+        'user.username LIKE :s OR user.email LIKE :s OR user.displayName LIKE :s',
+        { s: `%${search}%` },
+      );
+    }
+    qb.orderBy('user.totalXp', 'DESC');
+    qb.skip((page - 1) * limit).take(limit);
+    const [rows, total] = await qb.getManyAndCount();
+    const users = rows.map((u) => ({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      displayName: u.displayName || u.username,
+      city: u.city || '',
+      xp: u.xp,
+      totalXp: u.totalXp,
+      streak: u.currentStreak,
+      plan: u.plan || 'free',
+      role: u.role,
+      createdAt: u.createdAt,
+    }));
+    return { users, total };
+  }
 }

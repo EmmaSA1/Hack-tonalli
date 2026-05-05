@@ -220,6 +220,21 @@ export const apiService = {
     return res.data;
   },
 
+  adminGetMetrics: async () => {
+    const res = await api.get('/chapters/admin/metrics');
+    return res.data;
+  },
+
+  adminReorderChapters: async (orders: { id: string; order: number }[]) => {
+    const res = await api.patch('/chapters/admin/reorder', { orders });
+    return res.data;
+  },
+
+  adminGetUsers: async (page = 1, limit = 50, search = '') => {
+    const res = await api.get(`/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+    return res.data;
+  },
+
   // ── Leaderboard / Podium ────────────────────────────────────────────────
   getLeaderboard: async () => {
     const res = await api.get('/podium/global');

@@ -81,8 +81,49 @@ export class ChaptersService {
 
   // ── Find methods ────────────────────────────────────────────────────────
 
+  async reorderChapters(orders: { id: string; order: number }[]): Promise<void> {
+    for (const { id, order } of orders) {
+      await this.chaptersRepo.update(id, { order });
+    }
+  }
+
   async findAll(): Promise<Chapter[]> {
     return this.chaptersRepo.find({ relations: ['modules'], order: { order: 'ASC' } });
+  }
+
+  async getAdminMetrics() {
+    const totalChapters = await this.chaptersRepo.count();
+    const publishedChapters = await this.chaptersRepo.count({ where: { published: true } });
+    const totalUsers = await this.usersRepo.count();
+
+    // Quizzes completed = chapter_progress rows where quizCompleted = true OR completed = true (final exam)
+    const quizzesCompleted = await this.progressRepo.count({ where: { quizCompleted: true } });
+    const finalExamsCompleted = await this.progressRepo.count({ where: { completed: true } });
+
+    // Total XP distributed across all users
+    const xpResult = await this.usersRepo
+      .createQueryBuilder('user')
+      .select('SUM(user.totalXp)', 'total')
+      .getRawOne();
+    const totalXpDistributed = parseInt(xpResult?.total || '0', 10);
+
+    // Total XLM distributed = sum of xpEarned / 100 across all progress rows
+    const xlmResult = await this.progressRepo
+      .createQueryBuilder('p')
+      .select('SUM(p.xpEarned)', 'total')
+      .getRawOne();
+    const totalXlmDistributed = parseFloat(((parseInt(xlmResult?.total || '0', 10)) / 100).toFixed(2));
+
+    return {
+      totalChapters,
+      publishedChapters,
+      draftChapters: totalChapters - publishedChapters,
+      totalUsers,
+      quizzesCompleted,
+      finalExamsCompleted,
+      totalXpDistributed,
+      totalXlmDistributed,
+    };
   }
 
   /** Admin: all published (no week filter) */
