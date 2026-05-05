@@ -1,0 +1,220 @@
+# Required GitHub Secrets
+# RAILWAY_TOKEN or RENDER_API_KEY
+# RAILWAY_SERVICE_ID or RENDER_SERVICE_ID
+# DATABASE_URL
+# DB_HOST
+# DB_PORT
+# DB_USER
+# DB_PASS
+# DB_NAME
+# STELLAR_NETWORK
+# STELLAR_RPC_URL
+# STELLAR_HORIZON_URL
+# STELLAR_SOROBAN_URL
+# ACTA_API_KEY
+# ACTA_BASE_URL
+# STELLAR_ADMIN_SECRET
+# REWARD_POOL_SECRET
+# JWT_SECRET
+# VERCEL_TOKEN
+# VERCEL_ORG_ID
+# VERCEL_PROJECT_ID
+# STAGING_API_URL
+# SLACK_WEBHOOK_URL (optional)
+# SENDGRID_API_KEY (optional)
+# SENDGRID_FROM_EMAIL (optional)
+# SENDGRID_TO_EMAIL (optional)
+
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install backend dependencies
+        working-directory: Services-Tonalli
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: Web-app-tonalli
+        run: npm ci
+
+      - name: Build backend
+        working-directory: Services-Tonalli
+        run: npm run build
+
+      - name: Run backend tests
+        working-directory: Services-Tonalli
+        run: npm test
+
+      - name: Build frontend
+        working-directory: Web-app-tonalli
+        run: npm run build
+
+  deploy-backend:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_PORT: ${{ secrets.DB_PORT }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      STELLAR_NETWORK: ${{ secrets.STELLAR_NETWORK }}
+      STELLAR_RPC_URL: ${{ secrets.STELLAR_RPC_URL }}
+      STELLAR_HORIZON_URL: ${{ secrets.STELLAR_HORIZON_URL }}
+      STELLAR_SOROBAN_URL: ${{ secrets.STELLAR_SOROBAN_URL }}
+      ACTA_API_KEY: ${{ secrets.ACTA_API_KEY }}
+      ACTA_BASE_URL: ${{ secrets.ACTA_BASE_URL }}
+      STELLAR_ADMIN_SECRET: ${{ secrets.STELLAR_ADMIN_SECRET }}
+      REWARD_POOL_SECRET: ${{ secrets.REWARD_POOL_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate backend deploy target
+        run: |
+          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ] && [ -z "${{ secrets.RENDER_API_KEY }}" ]; then
+            echo "ERROR: Missing both RAILWAY_TOKEN and RENDER_API_KEY. One backend deploy target must be configured."
+            exit 1
+          fi
+
+      - name: Deploy backend to Railway
+        if: secrets.RAILWAY_TOKEN != ''
+        uses: berviantoleo/railway-deploy@v1
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_SERVICE_ID }}
+
+      - name: Trigger Render Deploy
+        if: secrets.RAILWAY_TOKEN == '' && secrets.RENDER_API_KEY != ''
+        run: |
+          set -e
+          response=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -d '{}')
+          echo "render_response=$response" >> "$GITHUB_OUTPUT"
+          deploy_id=$(python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" <<<"$response")
+          if [ -z "$deploy_id" ]; then
+            echo "Render deploy failed to return id: $response"
+            exit 1
+          fi
+          attempts=0
+          while [ $attempts -lt 20 ]; do
+            status=$(curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+              "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys/${deploy_id}" \
+              | python3 -c "import json,sys; data=json.load(sys.stdin); print(data.get('state',''))")
+            echo "Render deploy status: $status"
+            if [ "$status" = "activated" ]; then
+              echo "Render backend deployment is live"
+              exit 0
+            fi
+            if [ "$status" = "failed" ]; then
+              echo "Render deploy reported failed"
+              exit 1
+            fi
+            attempts=$((attempts + 1))
+            echo "Waiting for Render deploy to become active ($attempts/20)..."
+            sleep 15
+          done
+          echo "Render deploy did not become active after 20 attempts"
+          exit 1
+
+  deploy-frontend:
+    needs: deploy-backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy frontend to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod --confirm --env VITE_API_URL=${{ secrets.STAGING_API_URL }}'
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+
+  health-check:
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          for i in {1..10}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" "${{ secrets.STAGING_API_URL }}/api/health")
+            if [ "$status" = "200" ]; then
+              echo "Health check passed (attempt $i)"
+              exit 0
+            fi
+            echo "Attempt $i failed with status $status, retrying in 15s..."
+            sleep 15
+          done
+          echo "Health check failed after 10 attempts"
+          exit 1
+
+  notify-on-failure:
+    needs: [deploy-backend, deploy-frontend, health-check]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack on failure
+        if: secrets.SLACK_WEBHOOK_URL != ''
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "🚨 Staging deploy FAILED on `${{ github.ref_name }}` by `${{ github.actor }}`.\nCommit: `${{ github.sha }}`\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify email on failure
+        if: secrets.SLACK_WEBHOOK_URL == '' && secrets.SENDGRID_API_KEY != ''
+        run: |
+          set -e
+          payload=$(jq -n --arg branch "${{ github.ref_name }}" \
+                --arg actor "${{ github.actor }}" \
+                --arg sha "${{ github.sha }}" \
+                --arg runUrl "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+                --arg to "${{ secrets.SENDGRID_TO_EMAIL }}" \
+                --arg from "${{ secrets.SENDGRID_FROM_EMAIL }}" \
+                '{
+                  personalizations: [{ to: [{ email: $to }], subject: "🚨 Staging deploy FAILED" }],
+                  from: { email: $from },
+                  content: [{ type: "text/plain", value: "Staging deploy FAILED on " + $branch + " by " + $actor + ". Commit: " + $sha + ". Run: " + $runUrl }]
+                }')
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.SENDGRID_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            https://api.sendgrid.com/v3/mail/send
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}

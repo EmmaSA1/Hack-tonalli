@@ -316,4 +316,62 @@ mod tests {
         let history = client.get_reward_history(&user);
         assert_eq!(history.len(), 2);
     }
+
+    #[test]
+    fn test_deposit() {
+        let (env, admin, user, xlm_token, client) = setup();
+
+        // Deposit additional XLM
+        let sac_client = StellarAssetClient::new(&env, &xlm_token);
+        sac_client.mint(&admin, &10_000_000); // 1 XLM to admin
+
+        let initial_balance = client.pool_balance();
+        client.deposit(&admin, &5_000_000); // 0.5 XLM deposit
+        assert_eq!(client.pool_balance(), initial_balance + 5_000_000);
+    }
+
+    #[test]
+    fn test_withdraw() {
+        let (env, admin, user, xlm_token, client) = setup();
+
+        let initial_balance = client.pool_balance();
+        client.withdraw(&admin, &5_000_000); // 0.5 XLM withdraw
+        assert_eq!(client.pool_balance(), initial_balance - 5_000_000);
+    }
+
+    #[test]
+    fn test_pool_balance() {
+        let (env, _admin, _user, _xlm, client) = setup();
+        let balance = client.pool_balance();
+        assert_eq!(balance, 100_000_000); // 10 XLM initial mint
+    }
+
+    #[test]
+    fn test_is_lesson_rewarded() {
+        let (env, _admin, user, _xlm, client) = setup();
+
+        assert!(!client.is_lesson_rewarded(&user, &String::from_str(&env, "lesson-01")));
+
+        client.reward_user(&user, &String::from_str(&env, "lesson-01"), &5_000_000, &80);
+
+        assert!(client.is_lesson_rewarded(&user, &String::from_str(&env, "lesson-01")));
+        assert!(!client.is_lesson_rewarded(&user, &String::from_str(&env, "lesson-02")));
+    }
+
+    #[test]
+    fn test_total_distributed() {
+        let (env, _admin, user, _xlm, client) = setup();
+
+        client.reward_user(&user, &String::from_str(&env, "lesson-01"), &5_000_000, &80);
+        client.reward_user(&user, &String::from_str(&env, "lesson-02"), &5_000_000, &90);
+
+        assert_eq!(client.total_distributed(), 10_000_000);
+    }
+
+    #[test]
+    #[should_panic(expected = "Contract already initialized")]
+    fn test_double_initialize_fails() {
+        let (env, admin, _user, xlm_token, client) = setup();
+        client.initialize(&admin, &xlm_token);
+    }
 }

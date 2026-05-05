@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@nestjs/cache-manager';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -27,12 +28,17 @@ import { Quiz } from './lessons/entities/quiz.entity';
 import { Progress } from './progress/entities/progress.entity';
 import { NFTCertificate } from './progress/entities/nft-certificate.entity';
 import { Streak } from './users/entities/streak.entity';
+import { redisConfig } from './config/redis.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: () => redisConfig,
     }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
@@ -44,7 +50,7 @@ import { Streak } from './users/entities/streak.entity';
         password: process.env.DB_PASS || '',
         database: process.env.DB_NAME || 'tonalli',
         entities: [User, Lesson, Quiz, Progress, NFTCertificate, Streak, Chapter, ChapterModuleEntity, ChapterProgress, ChapterQuestion, WeeklyScore, PodiumReward, ActaCertificate],
-        synchronize: true,   // crea/actualiza tablas automáticamente
+        synchronize: true,
         logging: false,
         charset: 'utf8mb4',
       }),
