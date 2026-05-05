@@ -278,4 +278,37 @@ export class StellarService {
     }
     return true;
   }
+
+  async buildUnsignedTransaction(
+    sourcePublicKey: string,
+    operations: any[],
+  ): Promise<string> {
+    const sourceAccount = await this.server.loadAccount(sourcePublicKey);
+    const builder = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: StellarSdk.BASE_FEE,
+      networkPassphrase: this.networkPassphrase,
+    });
+
+    operations.forEach((op) => builder.addOperation(op));
+
+    return builder.setTimeout(60).build().toXDR();
+  }
+
+  async submitSignedTransaction(
+    signedXdr: string,
+  ): Promise<{ success: boolean; txHash?: string; error?: string }> {
+    try {
+      const transaction = StellarSdk.TransactionBuilder.fromXDR(
+        signedXdr,
+        this.networkPassphrase,
+      );
+      const result = await this.server.submitTransaction(transaction);
+      this.logger.log(`Transaction submitted successfully: ${result.hash}`);
+      return { success: true, txHash: result.hash };
+    } catch (error) {
+      const errorMsg = error.response?.data?.extras?.result_codes || error.message;
+      this.logger.error(`Submit transaction error: ${JSON.stringify(errorMsg)}`);
+      return { success: false, error: JSON.stringify(errorMsg) };
+    }
+  }
 }

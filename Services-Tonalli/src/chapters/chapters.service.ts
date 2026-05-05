@@ -473,6 +473,8 @@ export class ChaptersService {
 
     const isFinalExam = mod.type === 'final_exam';
 
+    const alreadyCompletedWithPassing = progress.completed && progress.score >= mod.passingScore;
+
     if (isFinalExam) {
       progress.attempts += 1;
       progress.score = Math.max(progress.score, score);
@@ -482,6 +484,17 @@ export class ChaptersService {
     }
 
     if (passed) {
+      if (alreadyCompletedWithPassing) {
+        return {
+          score, passed, correctCount: correct, totalQuestions: answers.length, results,
+          xpEarned: 0,
+          livesRemaining: -1,
+          moduleCompleted: true,
+          alreadyCompleted: true,
+          message: 'Este módulo ya fue completado anteriormente.',
+        };
+      }
+
       if (isFinalExam && !progress.completed) {
         progress.completed = true;
         progress.score = Math.max(progress.score, score);
@@ -510,16 +523,19 @@ export class ChaptersService {
           }
 
           // On-chain XLM reward via Learn-to-Earn contract
-          try {
-            const xlmAmount = (mod.xpReward || 50) / 100; // 0.5 XLM per 50 XP
-            await this.sorobanService.rewardUser({
-              userPublicKey: user.stellarPublicKey,
-              lessonId: mod.chapterId,
-              amountXlm: xlmAmount,
-              score,
-            });
-          } catch (e) {
-            console.error('On-chain reward error:', e.message);
+          if (!progress.rewardSent) {
+            try {
+              const xlmAmount = (mod.xpReward || 50) / 100; // 0.5 XLM per 50 XP
+              await this.sorobanService.rewardUser({
+                userPublicKey: user.stellarPublicKey,
+                lessonId: mod.chapterId,
+                amountXlm: xlmAmount,
+                score,
+              });
+              progress.rewardSent = true;
+            } catch (e) {
+              console.error('On-chain reward error:', e.message);
+            }
           }
 
           // Mint TNL tokens
@@ -543,7 +559,7 @@ export class ChaptersService {
           await this.usersRepo.save(user);
 
           // On-chain XLM reward via Learn-to-Earn contract for lesson modules
-          if (user.stellarPublicKey) {
+          if (user.stellarPublicKey && !progress.rewardSent) {
             try {
               const xlmAmount = (mod.xpReward || 30) / 100; // 0.3 XLM per 30 XP
               await this.sorobanService.rewardUser({
@@ -552,6 +568,7 @@ export class ChaptersService {
                 amountXlm: xlmAmount,
                 score,
               });
+              progress.rewardSent = true;
             } catch (e) {
               console.error('On-chain reward error (module):', e.message);
             }
@@ -719,7 +736,7 @@ export class ChaptersService {
         userId, chapterId, moduleId,
         infoCompleted: false, videoCompleted: false, videoProgress: 0,
         quizCompleted: false, quizScore: 0, quizAttempts: 0,
-        completed: false, score: 0, attempts: 0, xpEarned: 0,
+        completed: false, score: 0, attempts: 0, xpEarned: 0, rewardSent: false,
       });
       progress = await this.progressRepo.save(progress);
     }
