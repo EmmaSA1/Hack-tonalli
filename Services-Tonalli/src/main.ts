@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { SecurityInterceptor } from './common/interceptors/security.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,6 +20,8 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     }),
   );
+  
+  app.useGlobalInterceptors(new SecurityInterceptor());
 
   app.setGlobalPrefix('api');
 
