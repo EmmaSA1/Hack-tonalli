@@ -251,7 +251,9 @@ export class StellarService {
       transaction.sign(adminKeypair);
       const result = await this.server.submitTransaction(transaction);
 
-      this.logger.log(`NFT minted (admin) for lesson ${lessonId}: ${result.hash}`);
+      this.logger.log(
+        `NFT minted (admin) for lesson ${lessonId}: ${result.hash}`,
+      );
       return {
         success: true,
         txHash: result.hash,

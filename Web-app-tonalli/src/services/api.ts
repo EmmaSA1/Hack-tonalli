@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 export interface QuestionFormItem {
   question: string;
@@ -14,11 +14,11 @@ const BASE_URL =
 
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { "Content-Type": "application/json" },
 });
 
 api.interceptors.request.use((config) => {
-  const auth = localStorage.getItem('tonalli-auth');
+  const auth = localStorage.getItem("tonalli-auth");
   if (auth) {
     try {
       const parsed = JSON.parse(auth);
@@ -37,11 +37,11 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('tonalli-auth');
-      window.location.href = '/login';
+      localStorage.removeItem("tonalli-auth");
+      window.location.href = "/login";
     }
     return Promise.reject(err);
-  }
+  },
 );
 
 // Normalize backend user shape to frontend User type
@@ -51,20 +51,20 @@ function normalizeUser(u: any) {
     username: u.username,
     email: u.email,
     displayName: u.displayName || u.username,
-    city: u.city || 'Ciudad de México',
+    city: u.city || "Ciudad de México",
     xp: u.xp || 0,
     totalXp: u.totalXp || u.xp || 0,
     level: Math.floor((u.totalXp || u.xp || 0) / 1000) + 1,
     streak: u.currentStreak || 0,
-    walletAddress: u.walletAddress || u.stellarPublicKey || '',
+    walletAddress: u.walletAddress || u.stellarPublicKey || "",
     externalWalletAddress: u.externalWalletAddress || null,
-    walletType: u.walletType || 'custodial',
-    character: u.character || 'chima',
+    walletType: u.walletType || "custodial",
+    character: u.character || "chima",
     xlmEarned: u.xlmEarned || 0,
     lessonsCompleted: u.lessonsCompleted || 0,
     nftCertificates: u.nftCertificates || [],
-    role: (u.role as 'admin' | 'user') || 'user',
-    plan: u.plan || 'free',
+    role: (u.role as "admin" | "user") || "user",
+    plan: u.plan || "free",
     isFirstLogin: u.isFirstLogin ?? true,
     companion: u.companion || null,
     avatarType: u.avatarType || null,
@@ -74,28 +74,40 @@ function normalizeUser(u: any) {
 export const apiService = {
   // ── Auth ─────────────────────────────────────────────────────────────────
   login: async (email: string, password: string) => {
-    const res = await api.post('/auth/login', { email, password });
+    const res = await api.post("/auth/login", { email, password });
     return { token: res.data.access_token, user: normalizeUser(res.data.user) };
   },
 
-  register: async (username: string, email: string, password: string, city: string, dateOfBirth?: string) => {
-    const res = await api.post('/auth/register', { username, email, password, city, dateOfBirth });
+  register: async (
+    username: string,
+    email: string,
+    password: string,
+    city: string,
+    dateOfBirth?: string,
+  ) => {
+    const res = await api.post("/auth/register", {
+      username,
+      email,
+      password,
+      city,
+      dateOfBirth,
+    });
     return { token: res.data.access_token, user: normalizeUser(res.data.user) };
   },
 
   getProfile: async () => {
-    const res = await api.get('/users/me');
+    const res = await api.get("/users/me");
     return normalizeUser(res.data);
   },
 
   // ── Legacy lessons (backward compat) ────────────────────────────────────
   getModules: async () => {
-    const res = await api.get('/lessons/modules');
+    const res = await api.get("/lessons/modules");
     return res.data;
   },
 
   getLessons: async () => {
-    const res = await api.get('/lessons');
+    const res = await api.get("/lessons");
     return res.data;
   },
 
@@ -109,14 +121,17 @@ export const apiService = {
     return res.data;
   },
 
-  submitQuiz: async (lessonId: string, answers: { questionId: string; selectedIndex: number }[]) => {
+  submitQuiz: async (
+    lessonId: string,
+    answers: { questionId: string; selectedIndex: number }[],
+  ) => {
     const res = await api.post(`/lessons/${lessonId}/quiz/submit`, { answers });
     return res.data;
   },
 
   // ── Chapters (new system) ───────────────────────────────────────────────
   getChapters: async () => {
-    const res = await api.get('/chapters');
+    const res = await api.get("/chapters");
     return res.data;
   },
 
@@ -146,7 +161,9 @@ export const apiService = {
   },
 
   updateVideoProgress: async (moduleId: string, percent: number) => {
-    const res = await api.post(`/chapters/modules/${moduleId}/video-progress`, { percent });
+    const res = await api.post(`/chapters/modules/${moduleId}/video-progress`, {
+      percent,
+    });
     return res.data;
   },
 
@@ -155,13 +172,20 @@ export const apiService = {
     return res.data;
   },
 
-  submitChapterQuiz: async (moduleId: string, answers: { questionId: string; selectedIndex: number }[]) => {
-    const res = await api.post(`/chapters/modules/${moduleId}/quiz/submit`, { answers });
+  submitChapterQuiz: async (
+    moduleId: string,
+    answers: { questionId: string; selectedIndex: number }[],
+  ) => {
+    const res = await api.post(`/chapters/modules/${moduleId}/quiz/submit`, {
+      answers,
+    });
     return res.data;
   },
 
   reportQuizAbandon: async (moduleId: string, reason: string) => {
-    const res = await api.post(`/chapters/modules/${moduleId}/quiz/abandon`, { reason });
+    const res = await api.post(`/chapters/modules/${moduleId}/quiz/abandon`, {
+      reason,
+    });
     return res.data;
   },
 
@@ -172,12 +196,12 @@ export const apiService = {
 
   // ── Admin chapters ──────────────────────────────────────────────────────
   adminGetChapters: async () => {
-    const res = await api.get('/chapters/admin/all');
+    const res = await api.get("/chapters/admin/all");
     return res.data;
   },
 
   adminCreateChapter: async (data: Record<string, unknown>) => {
-    const res = await api.post('/chapters', data);
+    const res = await api.post("/chapters", data);
     return res.data;
   },
 
@@ -186,7 +210,10 @@ export const apiService = {
     return res.data;
   },
 
-  adminUpdateModule: async (moduleId: string, data: Record<string, unknown>) => {
+  adminUpdateModule: async (
+    moduleId: string,
+    data: Record<string, unknown>,
+  ) => {
     const res = await api.patch(`/chapters/modules/${moduleId}`, data);
     return res.data;
   },
@@ -215,19 +242,24 @@ export const apiService = {
     return res.data;
   },
 
-  adminReplaceModuleQuestions: async (moduleId: string, questions: QuestionFormItem[]) => {
-    const res = await api.put(`/chapters/modules/${moduleId}/questions`, { questions });
+  adminReplaceModuleQuestions: async (
+    moduleId: string,
+    questions: QuestionFormItem[],
+  ) => {
+    const res = await api.put(`/chapters/modules/${moduleId}/questions`, {
+      questions,
+    });
     return res.data;
   },
 
   // ── Leaderboard / Podium ────────────────────────────────────────────────
   getLeaderboard: async () => {
-    const res = await api.get('/podium/global');
+    const res = await api.get("/podium/global");
     return res.data;
   },
 
   getWeeklyPodium: async () => {
-    const res = await api.get('/podium/weekly');
+    const res = await api.get("/podium/weekly");
     return res.data;
   },
 
@@ -238,30 +270,30 @@ export const apiService = {
 
   // ── Podium NFTs ────────────────────────────────────────────────────────
   getPodiumNfts: async () => {
-    const res = await api.get('/podium/nfts');
+    const res = await api.get("/podium/nfts");
     return res.data;
   },
 
   // Demo: simulate podium distribution
   demoPodiumDistribute: async () => {
-    const res = await api.post('/podium/demo-distribute');
+    const res = await api.post("/podium/demo-distribute");
     return res.data;
   },
 
   // ── Reward History (on-chain) ────────────────────────────────────────
   getRewardHistory: async () => {
-    const res = await api.get('/users/me/rewards/history');
+    const res = await api.get("/users/me/rewards/history");
     return res.data;
   },
 
   getTotalRewards: async () => {
-    const res = await api.get('/users/me/rewards/total');
+    const res = await api.get("/users/me/rewards/total");
     return res.data;
   },
 
   // ── Certificates (ACTA) ─────────────────────────────────────────────────
   getCertificates: async () => {
-    const res = await api.get('/certificates');
+    const res = await api.get("/certificates");
     return res.data;
   },
 
@@ -270,7 +302,7 @@ export const apiService = {
     chapterTitle: string;
     examScore: number;
   }) => {
-    const res = await api.post('/certificates/issue', data);
+    const res = await api.post("/certificates/issue", data);
     return res.data;
   },
 
@@ -280,50 +312,65 @@ export const apiService = {
     actaVcId: string;
     txHash: string;
     examScore: number;
-    type: 'official' | 'achievement';
+    type: "official" | "achievement";
   }) => {
-    const res = await api.post('/certificates/store', data);
+    const res = await api.post("/certificates/store", data);
     return res.data;
   },
 
   verifyCertificate: async (vcId: string) => {
-    const res = await api.get(`/certificates/verify?vcId=${encodeURIComponent(vcId)}`);
+    const res = await api.get(
+      `/certificates/verify?vcId=${encodeURIComponent(vcId)}`,
+    );
     return res.data;
   },
 
   setupUser: async (companion: string, avatarType: string) => {
-    const res = await api.patch('/users/me/setup', { companion, avatarType });
+    const res = await api.patch("/users/me/setup", { companion, avatarType });
     return res.data;
   },
 
-  upgradePlan: async (plan: 'free' | 'pro' | 'max') => {
-    const res = await api.patch('/users/me/upgrade', { plan });
+  upgradePlan: async (plan: "free" | "pro" | "max") => {
+    const res = await api.patch("/users/me/upgrade", { plan });
     return res.data;
   },
 
   // ── Wallet ──────────────────────────────────────────────────────────────
   getWalletBalance: async () => {
-    const res = await api.get('/users/me/wallet/balance');
+    const res = await api.get("/users/me/wallet/balance");
     return res.data;
   },
 
   connectWallet: async (address: string) => {
-    const res = await api.post('/users/me/wallet/connect', { address });
+    const res = await api.post("/users/me/wallet/connect", { address });
     return res.data;
   },
 
   disconnectWallet: async () => {
-    const res = await api.post('/users/me/wallet/disconnect');
+    const res = await api.post("/users/me/wallet/disconnect");
     return res.data;
   },
 
   withdrawToExternal: async (amount: string) => {
-    const res = await api.post('/users/me/wallet/withdraw', { amount });
+    const res = await api.post("/users/me/wallet/withdraw", { amount });
     return res.data;
   },
 
   exportSecretKey: async (password: string) => {
-    const res = await api.post('/users/me/wallet/export-secret', { password });
+    const res = await api.post("/users/me/wallet/export-secret", { password });
+    return res.data;
+  },
+
+  // ── External Wallet Signing Flow ────────────────────────────────────────
+  prepareWithdrawal: async (amount: string) => {
+    const res = await api.post("/users/me/wallet/prepare-withdrawal", {
+      amount,
+    });
+    return res.data;
+  },
+
+  submitSignedWithdrawal: async (signedXDR: string) => {
+    const res = await api.post("/users/me/wallet/submit-signed", { signedXDR });
     return res.data;
   },
 
@@ -339,7 +386,7 @@ export const apiService = {
 
   // ── Legacy ──────────────────────────────────────────────────────────────
   getRankings: async () => {
-    const res = await api.get('/rankings');
+    const res = await api.get("/rankings");
     return res.data;
   },
 };

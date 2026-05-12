@@ -72,7 +72,9 @@ export class UsersController {
   async getTotalRewards(@Req() req) {
     const user = await this.usersService.findById(req.user.id);
     if (!user.stellarPublicKey) return { totalStroops: 0, totalXlm: 0 };
-    const totalStroops = await this.sorobanService.getUserTotalRewards(user.stellarPublicKey);
+    const totalStroops = await this.sorobanService.getUserTotalRewards(
+      user.stellarPublicKey,
+    );
     return { totalStroops, totalXlm: totalStroops / 10_000_000 };
   }
 
@@ -105,10 +107,7 @@ export class UsersController {
 
   @Post('users/me/wallet/connect')
   @UseGuards(JwtAuthGuard)
-  async connectWallet(
-    @Req() req,
-    @Body() body: { address: string },
-  ) {
+  async connectWallet(@Req() req, @Body() body: { address: string }) {
     const user = await this.usersService.connectExternalWallet(
       req.user.id,
       body.address,
@@ -132,10 +131,7 @@ export class UsersController {
 
   @Post('users/me/wallet/withdraw')
   @UseGuards(JwtAuthGuard)
-  async withdrawToExternal(
-    @Req() req,
-    @Body() body: { amount: string },
-  ) {
+  async withdrawToExternal(@Req() req, @Body() body: { amount: string }) {
     const user = await this.usersService.findById(req.user.id);
 
     if (!user.externalWalletAddress) {
@@ -162,10 +158,70 @@ export class UsersController {
 
   @Post('users/me/wallet/export-secret')
   @UseGuards(JwtAuthGuard)
-  async exportSecret(
-    @Req() req,
-    @Body() body: { password: string },
-  ) {
+  async exportSecret(@Req() req, @Body() body: { password: string }) {
     return this.usersService.exportSecretKey(req.user.id, body.password);
+  }
+
+  // ── External Wallet Signing Flow ────────────────────────────────────────
+
+  /**
+   * Prepare an unsigned XDR transaction for external wallet signing.
+   * Frontend will sign this with Freighter and submit via /submit-signed.
+   */
+  @Post('users/me/wallet/prepare-withdrawal')
+  @UseGuards(JwtAuthGuard)
+  async prepareWithdrawal(@Req() req, @Body() body: { amount: string }) {
+    const user = await this.usersService.findById(req.user.id);
+
+    if (!user.externalWalletAddress) {
+      return { success: false, error: 'No external wallet connected' };
+    }
+
+    // Build unsigned XDR from custodial to external wallet
+    const result = await this.stellarService.buildUnsignedXDR(
+      user.stellarPublicKey,
+      user.externalWalletAddress,
+      body.amount,
+      'Tonalli Withdrawal',
+    );
+
+    if (result.error) {
+      return { success: false, error: result.error };
+    }
+
+    return {
+      success: true,
+      xdr: result.xdr,
+      amount: body.amount,
+      from: user.stellarPublicKey,
+      to: user.externalWalletAddress,
+    };
+  }
+
+  /**
+   * Submit a signed XDR transaction (signed by Freighter or external wallet).
+   * Frontend signs the XDR from /prepare-withdrawal and sends it here.
+   */
+  @Post('users/me/wallet/submit-signed')
+  @UseGuards(JwtAuthGuard)
+  async submitSignedWithdrawal(
+    @Req() req,
+    @Body() body: { signedXDR: string },
+  ) {
+    const user = await this.usersService.findById(req.user.id);
+
+    if (!body.signedXDR) {
+      return { success: false, error: 'No signed XDR provided' };
+    }
+
+    const result = await this.stellarService.submitSignedXDR(body.signedXDR);
+
+    return {
+      success: result.success,
+      txHash: result.txHash,
+      amount: 'N/A', // Amount is in the XDR, not extracted here
+      destination: user.externalWalletAddress,
+      error: result.error,
+    };
   }
 }
