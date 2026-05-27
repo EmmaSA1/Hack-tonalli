@@ -14,6 +14,8 @@ import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { User } from '../users/entities/user.entity';
 import { SorobanService } from '../stellar/soroban.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @Injectable()
 export class ChaptersService {
@@ -29,6 +31,7 @@ export class ChaptersService {
     @InjectRepository(User)
     private readonly usersRepo: Repository<User>,
     private readonly sorobanService: SorobanService,
+    @InjectQueue('rewards') private readonly rewardsQueue: Queue,
   ) {}
 
   // ── Admin CRUD ───────────────────────────────────────────────────────────
@@ -584,6 +587,8 @@ export class ChaptersService {
       moduleCompleted: progress.completed,
       mustRedoModule: mustRedoModule || false,
       message,
+      xlmReward,
+      nftCertificate,
     };
   }
 

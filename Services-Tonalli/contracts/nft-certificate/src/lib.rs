@@ -113,6 +113,11 @@ impl NftCertificateContract {
             panic!("Score must be between 0 and 100");
         }
 
+        // Prevenir duplicados (anti-double-mint) para la misma lección
+        if Self::has_certificate(env.clone(), to.clone(), lesson_id.clone()) {
+            panic!("Certificate already minted for this lesson");
+        }
+
         // Incrementar contador de tokens
         let mut counter: u64 = env.storage().instance().get(&COUNTER_KEY)
             .unwrap_or(0);
@@ -256,6 +261,10 @@ mod tests {
         assert_eq!(cert.owner, user);
         assert_eq!(cert.score, 85);
         assert_eq!(cert.xp_earned, 50);
+
+        // Verificar que se emitió el evento
+        let events = env.events().all();
+        assert!(!events.is_empty());
     }
 
     #[test]
