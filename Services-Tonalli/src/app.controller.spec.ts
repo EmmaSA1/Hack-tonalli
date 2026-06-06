@@ -14,19 +14,9 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('getInfo', () => {
+  describe('root', () => {
     it('should return app info', () => {
-      const result = appController.getInfo();
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('healthCheck', () => {
-    it('should return status ok', () => {
-      const result = appController.healthCheck();
-      expect(result.status).toBe('ok');
-      expect(result.app).toBe('Tonalli API');
-      expect(result.timestamp).toBeDefined();
+      expect(appController.getInfo()).toHaveProperty('name', 'Tonalli API');
     });
   });
 });

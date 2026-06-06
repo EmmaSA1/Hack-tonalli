@@ -430,6 +430,24 @@ export class ChaptersService {
     const passed = score >= mod.passingScore;
     let progress = await this.getOrCreateProgress(mod.chapterId, moduleId, userId);
 
+    // Check DB if module was already completed with passing score BEFORE calling Soroban
+    if (progress.completed) {
+      return {
+        score,
+        passed,
+        correctCount: correct,
+        totalQuestions: answers.length,
+        results,
+        xpEarned: passed ? mod.xpReward : 0,
+        livesRemaining: -1,
+        moduleCompleted: true,
+        mustRedoModule: false,
+        message: passed 
+          ? '¡Felicidades! Has aprobado.' 
+          : `Necesitas ${mod.passingScore}% para pasar. Obtuviste ${score}%.`,
+      };
+    }
+
     const isFinalExam = mod.type === 'final_exam';
 
     const alreadyCompletedWithPassing = progress.completed && progress.score >= mod.passingScore;
@@ -482,19 +500,17 @@ export class ChaptersService {
           }
 
           // On-chain XLM reward via Learn-to-Earn contract
-          if (!progress.rewardSent) {
-            try {
-              const xlmAmount = (mod.xpReward || 50) / 100; // 0.5 XLM per 50 XP
-              await this.sorobanService.rewardUser({
-                userPublicKey: user.stellarPublicKey,
-                lessonId: mod.chapterId,
-                amountXlm: xlmAmount,
-                score,
-              });
-              progress.rewardSent = true;
-            } catch (e) {
-              console.error('On-chain reward error:', e.message);
-            }
+          try {
+            const xlmAmount = (mod.xpReward || 50) / 100; // 0.5 XLM per 50 XP
+            await this.sorobanService.rewardUser({
+              userPublicKey: user.stellarPublicKey,
+              lessonId: mod.chapterId,
+              amountXlm: xlmAmount,
+              score,
+            });
+            progress.rewardSent = true;
+          } catch (e) {
+            console.error('On-chain reward error:', e.message);
           }
 
           // Mint TNL tokens
