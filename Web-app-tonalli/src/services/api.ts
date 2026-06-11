@@ -44,7 +44,6 @@ api.interceptors.response.use(
   }
 );
 
-// Normalize backend user shape to frontend User type
 function normalizeUser(u: any) {
   return {
     id: u.id,
@@ -65,6 +64,7 @@ function normalizeUser(u: any) {
     nftCertificates: u.nftCertificates || [],
     role: (u.role as 'admin' | 'user') || 'user',
     plan: u.plan || 'free',
+    stripeSubscriptionStatus: u.stripeSubscriptionStatus || null,
     isFirstLogin: u.isFirstLogin ?? true,
     companion: u.companion || null,
     avatarType: u.avatarType || null,
@@ -72,7 +72,6 @@ function normalizeUser(u: any) {
 }
 
 export const apiService = {
-  // ── Auth ─────────────────────────────────────────────────────────────────
   login: async (email: string, password: string) => {
     const res = await api.post('/auth/login', { email, password });
     return { token: res.data.access_token, user: normalizeUser(res.data.user) };
@@ -88,7 +87,6 @@ export const apiService = {
     return normalizeUser(res.data);
   },
 
-  // ── Legacy lessons (backward compat) ────────────────────────────────────
   getModules: async () => {
     const res = await api.get('/lessons/modules');
     return res.data;
@@ -114,7 +112,6 @@ export const apiService = {
     return res.data;
   },
 
-  // ── Chapters (new system) ───────────────────────────────────────────────
   getChapters: async () => {
     const res = await api.get('/chapters');
     return res.data;
@@ -170,7 +167,6 @@ export const apiService = {
     return res.data;
   },
 
-  // ── Admin chapters ──────────────────────────────────────────────────────
   adminGetChapters: async () => {
     const res = await api.get('/chapters/admin/all');
     return res.data;
@@ -220,7 +216,6 @@ export const apiService = {
     return res.data;
   },
 
-  // ── Leaderboard / Podium ────────────────────────────────────────────────
   getLeaderboard: async () => {
     const res = await api.get('/podium/global');
     return res.data;
@@ -236,19 +231,16 @@ export const apiService = {
     return res.data;
   },
 
-  // ── Podium NFTs ────────────────────────────────────────────────────────
   getPodiumNfts: async () => {
     const res = await api.get('/podium/nfts');
     return res.data;
   },
 
-  // Demo: simulate podium distribution
   demoPodiumDistribute: async () => {
     const res = await api.post('/podium/demo-distribute');
     return res.data;
   },
 
-  // ── Reward History (on-chain) ────────────────────────────────────────
   getRewardHistory: async () => {
     const res = await api.get('/users/me/rewards/history');
     return res.data;
@@ -259,7 +251,6 @@ export const apiService = {
     return res.data;
   },
 
-  // ── Certificates (ACTA) ─────────────────────────────────────────────────
   getCertificates: async () => {
     const res = await api.get('/certificates');
     return res.data;
@@ -301,7 +292,11 @@ export const apiService = {
     return res.data;
   },
 
-  // ── Wallet ──────────────────────────────────────────────────────────────
+  createCheckoutSession: async (plan: 'pro' | 'max') => {
+    const res = await api.post('/payments/stripe/checkout', { plan });
+    return res.data as { sessionId: string; checkoutUrl: string };
+  },
+
   getWalletBalance: async () => {
     const res = await api.get('/users/me/wallet/balance');
     return res.data;

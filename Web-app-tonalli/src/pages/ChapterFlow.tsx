@@ -135,9 +135,9 @@ export function ChapterFlow() {
           <Lock size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 8 }}>{t('chapterLocked')}</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>{chapter.lockedReason}</p>
-          {chapter.plan === 'free' && (
+          {chapter.requiredPlan && chapter.requiredPlan !== 'free' && (
             <div className="card" style={{ padding: 16, marginBottom: 16, border: '1px solid rgba(201,146,10,0.3)', background: 'rgba(201,146,10,0.06)' }}>
-              <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.9rem' }}>Mejora a Pro o Max para desbloquear todos los capitulos</p>
+              <p style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.9rem' }}>Mejora tu plan para desbloquear este capitulo premium</p>
             </div>
           )}
           <button className="btn btn-secondary" onClick={() => navigate('/chapters')}>&larr; Volver</button>

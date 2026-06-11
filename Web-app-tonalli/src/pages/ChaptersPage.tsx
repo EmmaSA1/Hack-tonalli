@@ -145,6 +145,18 @@ export function ChaptersPage() {
                         {ch.moduleTag}
                       </span>
                     )}
+                    {ch.requiredPlan && ch.requiredPlan !== 'free' && (
+                      <span
+                        className="badge"
+                        style={{
+                          background: 'rgba(245,166,35,0.12)',
+                          color: ch.requiredPlan === 'max' ? '#F5A623' : '#E91E8C',
+                          border: `1px solid ${ch.requiredPlan === 'max' ? 'rgba(245,166,35,0.25)' : 'rgba(233,30,140,0.25)'}`,
+                        }}
+                      >
+                        {ch.requiredPlan.toUpperCase()}
+                      </span>
+                    )}
                   </div>
 
                   <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: 8, lineHeight: 1.4, fontFamily: "'Space Grotesk', sans-serif" }}>
@@ -153,9 +165,11 @@ export function ChaptersPage() {
 
                   {ch.accessible === false && ch.lockedReason && (
                     <div style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 6, padding: '6px 10px', marginBottom: 8, fontSize: '0.75rem', color: '#f59e0b' }}>
-                      {ch.lockedReason === 'free_limit'
-                        ? 'Capitulo exclusivo para planes Pro y Max.'
-                        : 'Disponible pronto.'}
+                      {ch.lockedReason === 'requires_max'
+                        ? 'Disponible solo para Max.'
+                        : ch.lockedReason === 'requires_pro'
+                          ? 'Disponible para Pro o Max.'
+                          : 'Disponible pronto.'}
                     </div>
                   )}
 

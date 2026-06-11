@@ -9,4 +9,5 @@ export class CreateChapterDto {
   estimatedMinutes?: number;
   xpReward?: number;
   releaseWeek?: string;
+  requiredPlan?: 'free' | 'pro' | 'max';
 }

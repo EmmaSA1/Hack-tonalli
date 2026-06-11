@@ -16,6 +16,7 @@ export interface User {
   walletType?: 'custodial' | 'external' | 'hybrid';
   avatarUrl?: string;
   character?: string;
+  stripeSubscriptionStatus?: string | null;
   nftCertificates: NFTCertificate[];
   isFirstLogin?: boolean;
   companion?: string;
@@ -34,10 +35,10 @@ export interface Chapter {
   estimatedMinutes?: number;
   xpReward: number;
   releaseWeek?: string;
+  requiredPlan?: 'free' | 'pro' | 'max';
   modules?: ChapterModuleData[];
   createdAt: string;
   updatedAt: string;
-  // Week access control
   accessible?: boolean;
   lockedReason?: string | null;
   currentWeek?: string;
@@ -57,12 +58,10 @@ export interface ChapterModuleData {
   xpReward: number;
   unlocked: boolean;
   completed: boolean;
-  // For lesson modules: 3 sections
   sections?: ModuleSections;
-  // For final exam
   score: number;
   attempts: number;
-  livesRemaining: number; // -1 = unlimited (premium)
+  livesRemaining: number;
   lockedUntil: string | null;
 }
 
@@ -74,6 +73,7 @@ export interface ChapterWithProgress {
   moduleTag?: string;
   xpReward: number;
   releaseWeek?: string;
+  requiredPlan?: 'free' | 'pro' | 'max';
   modules: ChapterModuleData[];
   completionPercent: number;
   plan: 'free' | 'pro' | 'max';
@@ -184,7 +184,7 @@ export interface PodiumNFT {
 
 export interface RewardHistoryEntry {
   lessonId: string;
-  amount: number;    // stroops
+  amount: number;
   timestamp: number;
 }
 

@@ -275,6 +275,19 @@ export function AdminDashboard() {
                   <div style={{ fontWeight: 600, fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.title}</div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                     {ch.moduleTag && <span className="badge badge-blue">{ch.moduleTag}</span>}
+                    {ch.requiredPlan && ch.requiredPlan !== 'free' && (
+                      <span
+                        className="badge"
+                        style={{
+                          background: 'rgba(233,30,140,0.1)',
+                          color: ch.requiredPlan === 'max' ? '#F5A623' : '#E91E8C',
+                          border: `1px solid ${ch.requiredPlan === 'max' ? 'rgba(245,166,35,0.3)' : 'rgba(233,30,140,0.3)'}`,
+                          fontSize: '0.68rem',
+                        }}
+                      >
+                        Plan: {ch.requiredPlan.toUpperCase()}
+                      </span>
+                    )}
                     {(ch as any).releaseWeek && (
                       <span className="badge" style={{ background: 'rgba(245,158,11,0.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.25)', fontSize: '0.68rem' }}>
                         Semana: {(ch as any).releaseWeek}

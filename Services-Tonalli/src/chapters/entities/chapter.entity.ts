@@ -23,7 +23,7 @@ export class Chapter {
   content: string;
 
   @Column({ nullable: true })
-  moduleTag: string;   // e.g. "blockchain", "stellar", "defi"
+  moduleTag: string;
 
   @Column({ default: 0 })
   order: number;
@@ -40,9 +40,11 @@ export class Chapter {
   @Column({ default: 0 })
   xpReward: number;
 
-  // Week this chapter is released for Free users (admin sets this)
   @Column({ nullable: true })
-  releaseWeek: string; // e.g. "2026-W12"
+  releaseWeek: string;
+
+  @Column({ default: 'free' })
+  requiredPlan: 'free' | 'pro' | 'max';
 
   @OneToMany(() => ChapterModule, (m) => m.chapter, { cascade: true })
   modules: ChapterModule[];
