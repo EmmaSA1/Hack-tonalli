@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tonalli-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_USER: ${DB_USER:-root}
+      MYSQL_ROOT_PASSWORD: ${DB_PASS:-root}
+      MYSQL_DATABASE: ${DB_NAME:-tonalli}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER:-root}", "-p${DB_PASS:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: tonalli-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./Services-Tonalli
+      dockerfile: Dockerfile
+    container_name: tonalli-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${BACKEND_PORT:-3001}
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-root}
+      DB_NAME: ${DB_NAME:-tonalli}
+      JWT_SECRET: ${JWT_SECRET:-tonalli-dev-secret-key-change-in-production}
+      ACTA_API_KEY: ${ACTA_API_KEY:-}
+      ACTA_NETWORK: ${ACTA_NETWORK:-testnet}
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    volumes:
+      - ./Services-Tonalli:/app
+      - /app/node_modules
+      - /app/dist
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build:
+      context: ./Web-app-tonalli
+      dockerfile: Dockerfile
+    container_name: tonalli-web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+      VITE_ACTA_API_KEY: ${ACTA_API_KEY:-}
+      VITE_ACTA_NETWORK: ${ACTA_NETWORK:-testnet}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./Web-app-tonalli:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+  redis_data:

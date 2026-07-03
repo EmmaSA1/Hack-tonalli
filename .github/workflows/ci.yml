@@ -1,0 +1,123 @@
+﻿name: CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  lint:
+    name: Lint (ESLint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install backend dependencies
+        working-directory: Services-Tonalli
+        run: npm ci
+
+      - name: Run ESLint on backend
+        working-directory: Services-Tonalli
+        run: npx eslint .
+
+      - name: Install frontend dependencies
+        working-directory: Web-app-tonalli
+        run: npm ci
+
+      - name: Run ESLint on frontend
+        working-directory: Web-app-tonalli
+        run: npx eslint .
+
+  test-backend:
+    name: Test Backend (Jest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: Services-Tonalli
+        run: npm ci
+
+      - name: Run Jest with coverage
+        working-directory: Services-Tonalli
+        # Coverage threshold set to 5% reflecting current test coverage.
+        # Target is 70% — raise this threshold as more tests are added.
+        run: npx jest --coverage --coverageThreshold='{"global":{"lines":5,"functions":5,"branches":5,"statements":5}}'
+
+  test-contracts:
+    name: Test Contracts (cargo test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            Services-Tonalli/contracts/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Services-Tonalli/contracts/Cargo.lock') }}
+
+      - name: Run contract tests
+        working-directory: Services-Tonalli/contracts
+        run: cargo test
+
+  build-backend:
+    name: Build Backend (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: Services-Tonalli
+        run: npm ci
+
+      - name: Build backend
+        working-directory: Services-Tonalli
+        run: npm run build
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: Web-app-tonalli
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: Web-app-tonalli
+        run: npm run build

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Flame, Star, BookOpen, Award, Copy, ExternalLink, Trophy } from 'lucide-react';
+import { Zap, Flame, Star, BookOpen, Award, Copy, ExternalLink, Trophy, Wallet, LogOut, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useProgressStore } from '../stores/progressStore';
 import { Link } from 'react-router-dom';
 import { useT } from '../hooks/useT';
+import { useFreighter } from '../hooks/useFreighter';
 import { apiService } from '../services/api';
 import type { PodiumNFT } from '../types';
 
@@ -172,18 +173,71 @@ function PodiumTrophyCard({ nft }: { nft: PodiumNFT }) {
 }
 
 export function Profile() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const { dailyStreak, completedLessons } = useProgressStore();
   const t = useT();
+  const freighter = useFreighter();
   const [podiumNfts, setPodiumNfts] = useState<PodiumNFT[]>([]);
   const [actaCerts, setActaCerts] = useState<any[]>([]);
+  const [walletBalances, setWalletBalances] = useState<{ xlm: string; tnl: number } | null>(null);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+
+  const fetchWalletData = async () => {
+    try {
+      setLoadingWallet(true);
+      const data = await apiService.getWalletBalance();
+      setWalletBalances({
+        xlm: data.xlmBalance,
+        tnl: data.tnlBalance,
+      });
+    } catch (err) {
+      console.error('Error fetching wallet data:', err);
+    } finally {
+      setLoadingWallet(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
       apiService.getPodiumNfts().then(setPodiumNfts).catch(() => {});
       apiService.getCertificates().then(setActaCerts).catch(() => {});
+      fetchWalletData();
     }
   }, [user]);
+
+  const handleConnectFreighter = async () => {
+    const address = await freighter.connect();
+    if (address) {
+      try {
+        const res = await apiService.connectWallet(address);
+        if (user) {
+          setUser({
+            ...user,
+            externalWalletAddress: res.externalWalletAddress,
+            walletType: res.walletType,
+          });
+        }
+      } catch (err) {
+        console.error('Error connecting wallet:', err);
+      }
+    }
+  };
+
+  const handleDisconnectFreighter = async () => {
+    try {
+      const res = await apiService.disconnectWallet();
+      if (user) {
+        setUser({
+          ...user,
+          externalWalletAddress: null,
+          walletType: res.walletType,
+        });
+      }
+      freighter.disconnect();
+    } catch (err) {
+      console.error('Error disconnecting wallet:', err);
+    }
+  };
 
   if (!user) {
     return (
@@ -253,28 +307,101 @@ export function Profile() {
         </div>
 
         {user.walletAddress && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
-              borderRadius: 20, padding: '6px 14px', fontSize: '0.75rem',
-            }}>
-              <span style={{
-                padding: '1px 6px', borderRadius: 8, fontSize: '0.6rem', fontWeight: 700,
-                background: user.walletType === 'hybrid' ? 'rgba(46,139,63,0.3)' : 'rgba(155,89,182,0.3)',
-                color: user.walletType === 'hybrid' ? '#2E8B3F' : '#9B59B6',
-              }}>
-                {user.walletType === 'hybrid' ? 'HIBRIDA' : 'CUSTODIAL'}
-              </span>
-              {user.walletAddress.substring(0, 8)}...{user.walletAddress.substring(user.walletAddress.length - 8)}
-            </div>
-            {user.externalWalletAddress && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 16 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'rgba(46,139,63,0.1)', border: '1px solid rgba(46,139,63,0.3)',
-                borderRadius: 20, padding: '4px 12px', fontSize: '0.7rem', color: 'var(--primary)',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)',
+                borderRadius: 20, padding: '6px 14px', fontSize: '0.75rem',
               }}>
-                Externa: {user.externalWalletAddress.substring(0, 8)}...{user.externalWalletAddress.substring(user.externalWalletAddress.length - 8)}
+                <span style={{
+                  padding: '2px 8px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 800,
+                  background: user.walletType === 'hybrid' ? 'rgba(46,139,63,0.3)' : 'rgba(155,89,182,0.3)',
+                  color: user.walletType === 'hybrid' ? '#2E8B3F' : '#9B59B6',
+                }}>
+                  {user.walletType === 'hybrid' ? 'HIBRIDA' : 'CUSTODIAL'}
+                </span>
+                <span style={{ fontFamily: 'monospace' }}>
+                  {user.walletAddress.substring(0, 6)}...{user.walletAddress.substring(user.walletAddress.length - 4)}
+                </span>
+              </div>
+
+              {user.externalWalletAddress && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(46,139,63,0.1)', border: '1px solid rgba(46,139,63,0.3)',
+                  borderRadius: 20, padding: '6px 14px', fontSize: '0.75rem', color: '#2E8B3F',
+                }}>
+                  <Wallet size={14} />
+                  <span style={{ fontFamily: 'monospace' }}>
+                    {user.externalWalletAddress.substring(0, 6)}...{user.externalWalletAddress.substring(user.externalWalletAddress.length - 4)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Wallet Actions */}
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              {user.walletType === 'custodial' ? (
+                <button
+                  onClick={handleConnectFreighter}
+                  disabled={freighter.loading}
+                  className="btn btn-sm"
+                  style={{
+                    background: 'rgba(255,107,53,0.2)',
+                    border: '1px solid var(--primary)',
+                    color: 'var(--primary)',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    fontSize: '0.75rem', fontWeight: 800,
+                  }}
+                >
+                  <LinkIcon size={14} /> {freighter.loading ? 'Conectando...' : 'Conectar Freighter'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleDisconnectFreighter}
+                  className="btn btn-sm"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-muted)',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    fontSize: '0.75rem', fontWeight: 800,
+                  }}
+                >
+                  <LogOut size={14} /> Desconectar Externa
+                </button>
+              )}
+
+              <button
+                onClick={fetchWalletData}
+                disabled={loadingWallet}
+                className="btn btn-sm"
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontSize: '0.75rem', padding: '0 10px',
+                }}
+              >
+                <RefreshCw size={14} className={loadingWallet ? 'spin' : ''} />
+              </button>
+            </div>
+
+            {/* Balances Display */}
+            {walletBalances && (
+              <div style={{
+                display: 'flex', gap: 20, marginTop: 8,
+                fontSize: '0.85rem', fontWeight: 700,
+                color: 'var(--text-muted)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#00C896' }}>{walletBalances.xlm}</span> XLM
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ color: '#FFD700' }}>{walletBalances.tnl}</span> TNL
+                </div>
               </div>
             )}
           </div>

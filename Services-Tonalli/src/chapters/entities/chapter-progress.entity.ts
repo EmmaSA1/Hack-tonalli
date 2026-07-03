@@ -55,6 +55,9 @@ export class ChapterProgress {
   @Column({ default: false })
   completed: boolean;
 
+  @Column({ default: false })
+  rewardSent: boolean;
+
   @Column({ default: 0 })
   score: number; // best quiz score
 

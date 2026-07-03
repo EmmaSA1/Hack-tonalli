@@ -1,0 +1,36 @@
+name: test-contracts
+
+on:
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  test-contracts:
+    name: cargo test – all contracts
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Services-Tonalli/contracts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Cargo registry & build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            Services-Tonalli/contracts/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Services-Tonalli/contracts/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Run cargo test (all contracts)
+        run: cargo test --workspace
