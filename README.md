@@ -7,3 +7,8 @@ https://stellar.expert/explorer/testnet/tx/ec9c077dcf655ee67f191a979e019e3095142
 A GitHub Actions workflow is available at `.github/workflows/deploy-staging.yml` to deploy backend and frontend on each merge into `main`.
 
 See `docs/deployment.md` for the required secrets and staging setup instructions.
+
+## Handsoff notes
+
+<!-- handsoff-issue-16 -->
+- #16: [M3-002] Admin panel: full chapter management
